@@ -1,3 +1,5 @@
+from abc import ABCMeta
+
 from AVLTree import AVLNode, AVLTree
 
 from pytest import fixture
@@ -196,16 +198,48 @@ def build_tree():
 def print_tree(node, level=0, prefix="Root: "):
     """if node.is_real_node():
     """
-    print(" " * (level * 4) + prefix + f"(Key: {node.key}, Value: {node.value}, Height: {node.height})")
-    if node.left or node.right:
+    parent = node.parent
+    if parent is not None:
+        parent = parent.key
+    print(" " * (level * 4) + prefix + f"(Key: {node.key}, Value: {node.value}, Height: {node.height}, Parent: {parent})")
+    if node.left:
         print_tree(node.left, level + 1, prefix="L--- ")
+    if node.right:
         print_tree(node.right, level + 1, prefix="R--- ")
 
 
 def test_avl_size(build_tree):
-    print_tree(build_tree.root)
     assert build_tree.size() == 20
 
+def test_balance_after_insertion(build_tree):
+    print_tree(build_tree.root)
+
+def test_right_rotate():
+    nodeA = AVLNode(2,2)
+    nodeX = AVLNode(4,4)
+    nodeB = AVLNode(5,5)
+    nodeY = AVLNode(7,7)
+    nodeC = AVLNode(9,9)
+    nodeAba = AVLNode(10,10)
+    nodeAba.left = nodeY
+    nodeY.parent = nodeAba
+    nodeA.parent = nodeX
+    nodeX.left = nodeA
+    nodeB.parent = nodeX
+    nodeX.right = nodeB
+    nodeC.parent = nodeY
+    nodeY.right = nodeC
+    nodeX.parent = nodeY
+    nodeY.left = nodeX
+    print_tree(nodeAba)
+    new_root = AVLTree.rotate_right(nodeY)
+    print_tree(nodeAba)
+    new_root2 = AVLTree.rotate_left(new_root)
+    print_tree(nodeAba)
+
+def balance_test(node):
+    if not node.left.is_real_node() and not node.left.is_real_node():
+        return True
 
 def test_avl_to_array(big_test_tree):
     # [0,1,2,3,4,5]
