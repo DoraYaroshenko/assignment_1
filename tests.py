@@ -186,13 +186,13 @@ def big_test_tree():
 
 @fixture()
 def build_tree():
-    lst = [i for i in range(20)]
-    root = AVLNode(key=lst[0], value=str(lst[0]))
+    lst = [i for i in range(3)]
+    root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     root.left = AVLNode(key=None, value=None, parent=root)
     root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree(root)
     for i in lst[1:]:
-        tree.insert(key=lst[i], val=str(lst[i]))
+        print(tree.insert(key=lst[i], val=str(lst[i])))
     return tree
 
 def print_tree(node, level=0, prefix="Root: "):
@@ -231,10 +231,20 @@ def test_right_rotate():
     nodeY.right = nodeC
     nodeX.parent = nodeY
     nodeY.left = nodeX
+
+    nodeA.left = AVLNode(None, None, parent=nodeA)
+    nodeA.right = AVLNode(None, None,parent=nodeA)
+    nodeB.left = AVLNode(None, None, parent=nodeB)
+    nodeB.right = AVLNode(None, None, parent=nodeB)
+    nodeC.left = AVLNode(None, None, parent=nodeC)
+    nodeC.right = AVLNode(None, None, parent=nodeC)
+
     print_tree(nodeAba)
-    new_root = AVLTree.rotate_right(nodeY)
+    AVLTree.rotate_right(nodeY)
     print_tree(nodeAba)
-    new_root2 = AVLTree.rotate_left(new_root)
+    AVLTree.rotate_left(nodeX)
+    print_tree(nodeAba)
+    AVLTree.left_right_double_rotation(nodeY)
     print_tree(nodeAba)
 
 def balance_test(node):

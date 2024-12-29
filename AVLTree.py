@@ -32,13 +32,20 @@ class AVLNode(object):
     @returns: False if self is a virtual node, True otherwise.
     """
 
+    def promote_height(self):
+        self.height += 1
+        return 1
+
+    def demote_height(self):
+        self.height -= 1
+
     def is_real_node(self):
         if self is None or self.key is None:
             return False
         return True
 
     def is_leaf(self):
-        return not self.left.is_real_node() and not self.right.is_real_node()
+        return (not self.left.is_real_node()) and (not self.right.is_real_node())
 
     def is_root(self):
         return self.parent is None
@@ -104,15 +111,15 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
 
-    def create_valid_leaf(self, key, val, parent):
+    @staticmethod
+    def create_valid_leaf(key, val, parent):
         new_node = AVLNode(key, val, 0)
         new_node.left = AVLNode(None, None, parent=new_node)
         new_node.right = AVLNode(None, None, parent=new_node)
         new_node.parent = parent
         return new_node
 
-    @staticmethod
-    def rotate_right(node: AVLNode):
+    def rotate_right(self, node: AVLNode):
         is_right = node.is_right_child()
         new_root = node.left
 
@@ -123,6 +130,7 @@ class AVLTree(object):
         new_root.parent = node.parent
         node.parent = new_root
         if new_root.parent is None:
+            self.root = new_root
             return
         if is_right:
             new_root.parent.right = new_root
@@ -130,8 +138,7 @@ class AVLTree(object):
             new_root.parent.left = new_root
         return
 
-    @staticmethod
-    def rotate_left(node: AVLNode):
+    def rotate_left(self, node: AVLNode):
         is_left = node.is_left_child()
         new_root = node.right
 
@@ -142,6 +149,7 @@ class AVLTree(object):
         new_root.parent = node.parent
         node.parent = new_root
         if new_root.parent is None:
+            self.root = new_root
             return
         if is_left:
             new_root.parent.left = new_root
@@ -149,41 +157,56 @@ class AVLTree(object):
             new_root.parent.right = new_root
         return
 
-    @staticmethod
-    def left_right_double_rotation(node):
-        AVLTree.rotate_left(node.left)
-        AVLTree.rotate_right(node)
+    def left_right_double_rotation(self, node):
+        AVLTree.rotate_left(self, node.left)
+        AVLTree.rotate_right(self, node)
+
+    def left_left_double_rotation(self, node):
+        AVLTree.rotate_left(self, node.right)
+        AVLTree.rotate_left(self, node)
 
     def rebalance_after_insert(self, node):
-        # promotions = 0
-        # parent = node.parent
-        # left_diff = parent.height - parent.left.height
-        # right_diff = parent.height - parent.right.height
-        # if left_diff == 1 and right_diff == 1:
-        #     return 0
-        # elif (left_diff == 0 and right_diff == 1) or (left_diff == 1 and right_diff == 0):
-        #     parent.height += 1
-        #     promotions += 1 + self.rebalance(parent)
-        # elif (left_diff == 0 and right_diff == 2) or (left_diff == 2 and right_diff == 0):
-        #     node_children_left_diff = node.height - node.left.height
-        #     node_children_right_diff = node.height - node.right.height
-        #     if node_children_left_diff == 1 and node_children_right_diff == 2:
-        #         new_subtree_root = AVLTree(parent).rotate_right()
-        #         if parent.parent.left.key == parent.key:
-        #             parent.parent.left = new_subtree_root
-        #         else:
-        #             parent.parent.right = new_subtree_root
-        #         parent.height -= 1
-        #     else:
-        #         new_subtree_root = AVLTree(parent).double_rotation()
-        #         new_subtree_root.height += 1
-        #         if parent.parent.left.key == parent.key:
-        #             parent.parent.left = new_subtree_root
-        #         else:
-        #             parent.parent.right = new_subtree_root
-        #         parent.height -= 1
-        #         node.height -= 1
-        # return promotions
+        promotions = 0
+        parent = node.parent
+        right = node.right
+        left = node.left
+        if parent is None:
+            return promotions
+        promotions += node.promote_height()
+        left_diff = parent.height - parent.left.height
+        right_diff = parent.height - parent.right.height
+        node_children_left_diff = node.height - node.left.height
+        node_children_right_diff = node.height - node.right.height
+        case1 = (left_diff == 0 and right_diff == 1) or (left_diff == 1 and right_diff == 0)
+        case2_1 = (left_diff == 0 and right_diff == 2) and (
+                node_children_left_diff == 1 and node_children_right_diff == 2)
+        case2_2 = (left_diff == 2 and right_diff == 0) and (
+                node_children_left_diff == 1 and node_children_right_diff == 2)
+        case3_1 = (left_diff == 0 and right_diff == 2) and (
+                node_children_left_diff == 2 and node_children_right_diff == 1)
+        case3_2 = (left_diff == 2 and right_diff == 0) and (
+                node_children_left_diff == 2 and node_children_right_diff == 1)
+        case0 = left_diff == 1 and right_diff == 1
+        if case0:
+            return promotions
+        if case1:
+            promotions += parent.promote_height() + self.rebalance_after_insert(parent)
+        if case2_1 or case2_2:
+            if case2_1:
+                self.rotate_right(parent)
+            if case2_2:
+                self.rotate_left(parent)
+            parent.demote_height()
+            return promotions
+        if case3_1 or case3_2:
+            if case3_1:
+                self.left_right_double_rotation(parent)
+            if case3_2:
+                self.left_left_double_rotation(parent)
+            node.demote_height()
+            parent.demote_height()
+            right.promote_height()
+            return promotions
 
     def find_insertion_place(self, key):
         node = self.root
@@ -201,18 +224,16 @@ class AVLTree(object):
 
     def insert(self, key, val):
         node, is_right, path_len_counter = self.find_insertion_place(key)
-        needs_rebalance = False
         new_node = self.create_valid_leaf(key, val, node.parent)
+        parent_is_leaf = node.parent.is_leaf()
         if is_right:
             node.parent.right = new_node
         else:
             node.parent.left = new_node
-        if (not new_node.parent.is_root()) and new_node.parent.is_leaf():
-            needs_rebalance = True
-        promotions = 0
-        # if needs_rebalance:
-        #     new_node.parent.height += 1
-        #     promotions = 1 + self.rebalance_after_insert(new_node.parent)
+        if new_node.parent.is_root() or (not parent_is_leaf):
+            new_node.parent.promote_height()
+            return new_node, path_len_counter, 1
+        promotions = self.rebalance_after_insert(new_node.parent)
         return new_node, path_len_counter, promotions
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
