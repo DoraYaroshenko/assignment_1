@@ -5,6 +5,38 @@
 # name2:
 # username2:
 from typing import Optional
+from enum import Enum
+
+
+class InsertRebalanceCase(Enum):
+    CASE0 = 0
+    CASE1 = 1
+    CASE2_1 = 21
+    CASE2_2 = 22
+    CASE3_1 = 31
+    CASE3_2 = 32
+
+    @classmethod
+    def from_insert_height_diffs(cls, parent_left_diff, parent_right_diff, node_left_diff, node_right_diff):
+        if parent_left_diff == 1 and parent_right_diff == 1:
+            return InsertRebalanceCase.CASE0
+        elif (parent_left_diff == 0 and parent_right_diff == 1) or (parent_left_diff == 1 and parent_right_diff == 0):
+            return InsertRebalanceCase.CASE1
+        elif (parent_left_diff == 0 and parent_right_diff == 2) and (
+                node_left_diff == 1 and node_right_diff == 2):
+            return InsertRebalanceCase.CASE2_1
+        elif (parent_left_diff == 2 and parent_right_diff == 0) and (
+                node_left_diff == 2 and node_right_diff == 1):
+            return InsertRebalanceCase.CASE2_2
+        elif (parent_left_diff == 0 and parent_right_diff == 2) and (
+                node_left_diff == 2 and node_right_diff == 1):
+            return InsertRebalanceCase.CASE3_1
+        elif (parent_left_diff == 2 and parent_right_diff == 0) and (
+                node_left_diff == 1 and node_right_diff == 2):
+            return InsertRebalanceCase.CASE3_2
+        else:
+            raise Exception
+
 
 """A class represnting a node in an AVL tree"""
 
@@ -161,52 +193,50 @@ class AVLTree(object):
         AVLTree.rotate_left(self, node.left)
         AVLTree.rotate_right(self, node)
 
-    def left_left_double_rotation(self, node):
-        AVLTree.rotate_left(self, node.right)
+    def right_left_double_rotation(self, node):
+        AVLTree.rotate_right(self, node.right)
         AVLTree.rotate_left(self, node)
 
     def rebalance_after_insert(self, node):
         promotions = 0
         parent = node.parent
-        right = node.right
-        left = node.left
+        promotions += node.promote_height()
         if parent is None:
             return promotions
-        promotions += node.promote_height()
-        left_diff = parent.height - parent.left.height
-        right_diff = parent.height - parent.right.height
-        node_children_left_diff = node.height - node.left.height
-        node_children_right_diff = node.height - node.right.height
-        case1 = (left_diff == 0 and right_diff == 1) or (left_diff == 1 and right_diff == 0)
-        case2_1 = (left_diff == 0 and right_diff == 2) and (
-                node_children_left_diff == 1 and node_children_right_diff == 2)
-        case2_2 = (left_diff == 2 and right_diff == 0) and (
-                node_children_left_diff == 1 and node_children_right_diff == 2)
-        case3_1 = (left_diff == 0 and right_diff == 2) and (
-                node_children_left_diff == 2 and node_children_right_diff == 1)
-        case3_2 = (left_diff == 2 and right_diff == 0) and (
-                node_children_left_diff == 2 and node_children_right_diff == 1)
-        case0 = left_diff == 1 and right_diff == 1
-        if case0:
-            return promotions
-        if case1:
-            promotions += parent.promote_height() + self.rebalance_after_insert(parent)
-        if case2_1 or case2_2:
-            if case2_1:
+
+        parent_left_diff = parent.height - parent.left.height
+        parent_right_diff = parent.height - parent.right.height
+        node_left_diff = node.height - node.left.height
+        node_right_diff = node.height - node.right.height
+        insertion_case = InsertRebalanceCase.from_insert_height_diffs(
+            parent_left_diff=parent_left_diff, parent_right_diff=parent_right_diff,
+            node_left_diff=node_left_diff, node_right_diff=node_right_diff
+        )
+
+        match insertion_case:
+            case InsertRebalanceCase.CASE0:
+                pass
+            case InsertRebalanceCase.CASE1:
+                promotions += self.rebalance_after_insert(parent)
+            case InsertRebalanceCase.CASE2_1:
                 self.rotate_right(parent)
-            if case2_2:
+                parent.demote_height()
+            case InsertRebalanceCase.CASE2_2:
                 self.rotate_left(parent)
-            parent.demote_height()
-            return promotions
-        if case3_1 or case3_2:
-            if case3_1:
+                parent.demote_height()
+            case InsertRebalanceCase.CASE3_1:
+                right = node.right
                 self.left_right_double_rotation(parent)
-            if case3_2:
-                self.left_left_double_rotation(parent)
-            node.demote_height()
-            parent.demote_height()
-            right.promote_height()
-            return promotions
+                node.demote_height()
+                parent.demote_height()
+                right.promote_height()
+            case InsertRebalanceCase.CASE3_2:
+                left = node.left
+                self.right_left_double_rotation(parent)
+                node.demote_height()
+                parent.demote_height()
+                left.promote_height()
+        return promotions
 
     def find_insertion_place(self, key):
         node = self.root
@@ -230,10 +260,15 @@ class AVLTree(object):
             node.parent.right = new_node
         else:
             node.parent.left = new_node
-        if new_node.parent.is_root() or (not parent_is_leaf):
+
+        promotions = 0
+        if new_node.parent.is_root():
             new_node.parent.promote_height()
-            return new_node, path_len_counter, 1
-        promotions = self.rebalance_after_insert(new_node.parent)
+            promotions += 1
+        elif not parent_is_leaf:
+            pass
+        else:
+            promotions = self.rebalance_after_insert(new_node.parent)
         return new_node, path_len_counter, promotions
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max

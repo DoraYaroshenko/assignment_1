@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from random import shuffle
 
 from AVLTree import AVLNode, AVLTree
 
@@ -186,27 +187,35 @@ def big_test_tree():
 
 @fixture()
 def build_tree():
-    lst = [i for i in range(3)]
+    lst = [i for i in range(20)]
+    shuffle(lst)
+    print(lst)
     root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     root.left = AVLNode(key=None, value=None, parent=root)
     root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree(root)
     for i in lst[1:]:
-        print(tree.insert(key=lst[i], val=str(lst[i])))
+        tree.insert(key=lst[i], val=str(lst[i]))
+        print_tree(tree.root)
     return tree
 
 def print_tree(node, level=0, prefix="Root: "):
     """if node.is_real_node():
     """
-    parent = node.parent
-    if parent is not None:
-        parent = parent.key
-    print(" " * (level * 4) + prefix + f"(Key: {node.key}, Value: {node.value}, Height: {node.height}, Parent: {parent})")
-    if node.left:
-        print_tree(node.left, level + 1, prefix="L--- ")
-    if node.right:
-        print_tree(node.right, level + 1, prefix="R--- ")
-
+    # parent = node.parent
+    # if parent is not None:
+    #     parent = parent.key
+    # print(" " * (level * 4) + prefix + f"(Key: {node.key}, Value: {node.value}, Height: {node.height}, Parent: {parent})")
+    # if node.left:
+    #     print_tree(node.left, level + 1, prefix="L--- ")
+    # if node.right:
+    #     print_tree(node.right, level + 1, prefix="R--- ")
+    if level==0:
+        print("\n\n\n")
+    if node is not None:
+        print_tree(node.left, level + 1)
+        print(' ' * 4 * level + '-> ' + str(node.value))
+        print_tree(node.right, level + 1)
 
 def test_avl_size(build_tree):
     assert build_tree.size() == 20
