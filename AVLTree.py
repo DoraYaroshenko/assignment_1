@@ -8,6 +8,19 @@ from enum import Enum
 
 """A class represnting a node in an AVL tree"""
 
+class JoiningRebalanceCase(Enum):
+    CASE0 = 0
+    CASE1 = 1
+    CASE2 = 2
+
+    @classmethod
+    def from_joining_height_diffs(cls, tr_with_bigger_keys_height, tr_with_smaller_keys_height):
+        if tr_with_smaller_keys_height == tr_with_bigger_keys_height:
+            return JoiningRebalanceCase.CASE0
+        elif tr_with_bigger_keys_height > tr_with_smaller_keys_height:
+            return JoiningRebalanceCase.CASE1
+        else:
+            return JoiningRebalanceCase.CASE2
 
 class AVLNode(object):
 	"""Constructor, you are allowed to add more fields. 
@@ -499,10 +512,52 @@ class AVLTree(object):
 	@pre: all keys in self are smaller than key and all keys in tree2 are larger than key,
 	or the opposite way
 	"""
+	def find_joining_point(self, h, is_right):
+		node = self.root
+		while node.height > h:
+			if is_right:
+				node = node.right
+			else:
+				node = node.left
+		return node
+
 	def join(self, tree2, key, val):
-		return
-
-
+		tree2_has_bigger_keys = tree2.root.key > self.root.key
+		tree_with_bigger_keys = tree2 if tree2_has_bigger_keys else self
+		tree_with_smaller_keys = self if tree2_has_bigger_keys else tree2
+		taller_tree = self if self.root.height > tree2.root.height else tree2
+		shorter_tree = tree2 if self.root.height > tree2.root.height else self
+		joining_case = JoiningRebalanceCase.from_joining_height_diffs(tree_with_bigger_keys.root.height,
+																	  tree_with_smaller_keys.root.height)
+		joining_node = self.create_valid_node(key=key, val=val)
+		joining_node.height = shorter_tree.root.height + 1
+		if joining_case== JoiningRebalanceCase.CASE0:
+			joining_node.right = tree_with_bigger_keys.root
+			tree_with_bigger_keys.root.parent = joining_node
+			joining_node.left = tree_with_smaller_keys.root
+			tree_with_smaller_keys.root.parent = joining_node
+			self.root = joining_node
+		if joining_case==JoiningRebalanceCase.CASE1:
+			joining_point = taller_tree.find_joining_point(shorter_tree.root.height, False)
+			joining_node.parent = joining_point.parent
+			joining_node.right = joining_point
+			joining_point.parent.left = joining_node
+			joining_point.parent = joining_node
+			joining_node.left = shorter_tree.root
+			shorter_tree.root.parent = joining_node
+			self.root = taller_tree.root
+			self.rebalance_after_insert(joining_node.parent)
+		if joining_case==JoiningRebalanceCase.CASE2:
+			joining_point = taller_tree.find_joining_point(shorter_tree.root.height, True)
+			joining_node.parent = joining_point.parent
+			joining_node.left = joining_point
+			joining_point.parent.right = joining_node
+			joining_point.parent = joining_node
+			joining_node.right = shorter_tree.root
+			shorter_tree.root.parent = joining_node
+			self.root = taller_tree.root
+			self.rebalance_after_insert(joining_node.parent)
+			
 	"""splits the dictionary at a given node
 
 	@type node: AVLNode
@@ -513,10 +568,31 @@ class AVLTree(object):
 	dictionary smaller than node.key, and right is an AVLTree representing the keys in the 
 	dictionary larger than node.key.
 	"""
-	def split(self, node):
-		return None, None
 
-	
+	def split(self, node):
+		currNode=self.root
+		treeLess=AVLTree()
+		treeMore=AVLTree()
+		inTree=False
+		while(currNode.is_real_node()):
+			if(currNode.key>node.key):
+				currNode=currNode.left
+			elif(currNode.key<node.key):
+				currNode=currNode.right
+			else:
+				inTree=True
+				break
+		if(inTree):
+			currNode.right_subtree().join(treeMore, currNode.right.key, currNode.right.value)
+			currNode.left_subtree().join(treeLess, currNode.left.key, currNode.left.value)
+		while(currNode.parent!=None):
+			isRight=currNode.is_right_child()
+			currNode=currNode.parent
+			if(isRight):
+				currNode.left_subtree().join(treeLess, currNode.key, currNode.value)
+			else:
+				currNode.right_subtree().join(treeMore, currNode.key, currNode.value)
+
 	"""returns an array representing dictionary 
 
 	@rtype: list
