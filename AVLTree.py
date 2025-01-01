@@ -423,7 +423,6 @@ class AVLTree(object):
 
 	def balance_post_deletion(self):
 		pivot=self.root
-		sdafjhkjasdd
 		if (pivot.is_real_node()==True):
 			case=AVLNode.DeleteRebalanceCase.determine_case(pivot)
 			if (case==AVLNode.DeleteRebalanceCase(0)):#if node is balanced
