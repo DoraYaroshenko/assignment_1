@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from random import shuffle
+from random import shuffle, randrange
 
 from AVLTree import AVLNode, AVLTree
 
@@ -187,7 +187,7 @@ def big_test_tree():
 
 @fixture()
 def build_tree():
-    lst = [i for i in range(20)]
+    lst = [i for i in range(10000)]
     shuffle(lst)
     print(lst)
     root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
@@ -195,41 +195,81 @@ def build_tree():
     root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree(root)
     for i in lst[1:]:
-        tree.insert(key=lst[i], val=str(lst[i]))
-        print_tree(tree.root)
+        tree.insert(key=i, val=str(i))
     return tree
+
+
+@fixture()
+def build_tree2():
+    lst = [i for i in range(10001, 20001)]
+    shuffle(lst)
+    print(lst)
+    root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
+    root.left = AVLNode(key=None, value=None, parent=root)
+    root.right = AVLNode(key=None, value=None, parent=root)
+    tree = AVLTree(root)
+    num = randrange(2, 10000)
+    for number in lst[1:num]:
+        tree.insert(key=number, val=str(number))
+    return tree
+
 
 def print_tree(node, level=0, prefix="Root: "):
     """if node.is_real_node():
     """
-    # parent = node.parent
-    # if parent is not None:
-    #     parent = parent.key
-    # print(" " * (level * 4) + prefix + f"(Key: {node.key}, Value: {node.value}, Height: {node.height}, Parent: {parent})")
-    # if node.left:
-    #     print_tree(node.left, level + 1, prefix="L--- ")
-    # if node.right:
-    #     print_tree(node.right, level + 1, prefix="R--- ")
-    if level==0:
-        print("\n\n\n")
-    if node is not None:
-        print_tree(node.left, level + 1)
-        print(' ' * 4 * level + '-> ' + str(node.value))
-        print_tree(node.right, level + 1)
+    parent = node.parent
+    if parent is not None:
+        parent = parent.key
+    print(
+        " " * (level * 4) + prefix + f"(Key: {node.key}, Value: {node.value}, Height: {node.height}, Parent: {parent})")
+    if node.left:
+        print_tree(node.left, level + 1, prefix="L--- ")
+    if node.right:
+        print_tree(node.right, level + 1, prefix="R--- ")
+    # if level==0:
+    #     print("\n\n\n")
+    # if node is not None:
+    #     print_tree(node.left, level + 1)
+    #     print(' ' * 4 * level + '-> ' + str(node.value))
+    #     print_tree(node.right, level + 1)
+
 
 def test_avl_size(build_tree):
-    assert build_tree.size() == 20
+    assert build_tree.size() == 10000
 
-def test_balance_after_insertion(build_tree):
-    print_tree(build_tree.root)
+
+def test_balance(build_tree):
+    root = build_tree.root
+    if not root.is_real_node():
+        return True
+    left_diff = root.height - root.left.height
+    right_diff = root.height - root.right.height
+    case1 = (left_diff == 1 and right_diff == 1)
+    case2 = (left_diff == 1 and right_diff == 2)
+    case3 = (left_diff == 2 and right_diff == 1)
+    return (case1 or case2 or case3) and test_balance(
+        AVLTree(root.right)) and test_balance(AVLTree(root.left))
+
+
+def test_join(build_tree, build_tree2):
+    print(build_tree.size(), build_tree2.size())
+    build_tree.join(build_tree2, 10000, 10000)
+    return test_balance(build_tree)
+
+
+def test_finger_search(build_tree):
+    num = randrange(0,10000)
+    node, path = build_tree.finger_search(num)
+    assert node.key == num
+
 
 def test_right_rotate():
-    nodeA = AVLNode(2,2)
-    nodeX = AVLNode(4,4)
-    nodeB = AVLNode(5,5)
-    nodeY = AVLNode(7,7)
-    nodeC = AVLNode(9,9)
-    nodeAba = AVLNode(10,10)
+    nodeA = AVLNode(2, 2)
+    nodeX = AVLNode(4, 4)
+    nodeB = AVLNode(5, 5)
+    nodeY = AVLNode(7, 7)
+    nodeC = AVLNode(9, 9)
+    nodeAba = AVLNode(10, 10)
     nodeAba.left = nodeY
     nodeY.parent = nodeAba
     nodeA.parent = nodeX
@@ -242,7 +282,7 @@ def test_right_rotate():
     nodeY.left = nodeX
 
     nodeA.left = AVLNode(None, None, parent=nodeA)
-    nodeA.right = AVLNode(None, None,parent=nodeA)
+    nodeA.right = AVLNode(None, None, parent=nodeA)
     nodeB.left = AVLNode(None, None, parent=nodeB)
     nodeB.right = AVLNode(None, None, parent=nodeB)
     nodeC.left = AVLNode(None, None, parent=nodeC)
@@ -256,11 +296,8 @@ def test_right_rotate():
     AVLTree.left_right_double_rotation(nodeY)
     print_tree(nodeAba)
 
-def balance_test(node):
-    if not node.left.is_real_node() and not node.left.is_real_node():
-        return True
 
-def test_avl_to_array(big_test_tree):
+def test_avl_to_array(build_tree):
     # [0,1,2,3,4,5]
 
-    assert big_test_tree.avl_to_array() == [(i, str(i)) for i in range(20)]
+    assert build_tree.avl_to_array() == [(i, str(i)) for i in range(build_tree.size())]

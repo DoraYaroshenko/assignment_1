@@ -38,6 +38,21 @@ class InsertRebalanceCase(Enum):
             raise Exception
 
 
+class JoiningRebalanceCase(Enum):
+    CASE0 = 0
+    CASE1 = 1
+    CASE2 = 2
+
+    @classmethod
+    def from_joining_height_diffs(cls, tr_with_bigger_keys_height, tr_with_smaller_keys_height):
+        if tr_with_smaller_keys_height == tr_with_bigger_keys_height:
+            return JoiningRebalanceCase.CASE0
+        elif tr_with_bigger_keys_height > tr_with_smaller_keys_height:
+            return JoiningRebalanceCase.CASE1
+        else:
+            return JoiningRebalanceCase.CASE2
+
+
 """A class represnting a node in an AVL tree"""
 
 
@@ -106,6 +121,48 @@ class AVLTree(object):
     def __init__(self, root=None):
         self.root: AVLNode = root
 
+    """
+    method for creation of the left subtree of the current tree
+    @rtype: AVLTree
+    @returns: the left subtree of the current tree
+    time complexity O(1)
+    """
+
+    def left_subtree(self):
+        ltree = AVLTree()
+        ltree.root = self.root.left
+        return ltree
+
+    """
+    method for creation of the right subtree of the current tree
+    @rtype: AVLTree
+    @returns: the right subtree of the current tree
+    time complexity O(1)
+    """
+
+    def right_subtree(self):
+        rtree = AVLTree()
+        rtree.root = self.root.right
+        return rtree
+
+    """
+    envelope function for search
+    @type k: int
+    @param k: a key to be searched
+    @rtype: (AVLNode,int)
+    @returns: a tuple (x,e) where x is the node corresponding to key (or None if not found),
+    and e is the number of edges on the path between the starting node and ending node+1.
+    """
+
+    def search_envelope(self, k, path):
+        if not self.root.is_real_node():
+            return None, path + 1
+        if self.root.key == k:
+            return self.root, path + 1
+        if self.root.key > k:
+            return self.left_subtree().search_envelope(k, path + 1)
+        return self.right_subtree().search_envelope(k, path + 1)
+
     """searches for a node in the dictionary corresponding to the key (starting at the root)
         
     @type key: int
@@ -116,10 +173,10 @@ class AVLTree(object):
     """
 
     def search(self, key):
-        return None, -1
+        return self.search_envelope(key, 0)
 
     """searches for a node in the dictionary corresponding to the key, starting at the max
-        
+
     @type key: int
     @param key: a key to be searched
     @rtype: (AVLNode,int)
@@ -127,8 +184,23 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
 
+    """
+    time complexity is O(log(n)), since the first and second loops will have at most log(n) iterations of O(1) complexity
+    and then we call on a function of time complexity O(log(n))
+    hence the total running time in the worst case is 3log(n)=O(log(n))
+    """
+
     def finger_search(self, key):
-        return None, -1
+        curr = self.max_node()
+        path = 0
+        while curr.key > key and curr.parent is not None and curr.parent.key >= key:
+            path = path + 1
+            curr = curr.parent
+        if curr.key == key:
+            return curr, path
+        ltree = AVLTree()
+        ltree.root = curr.left
+        return ltree.search_envelope(key, path + 1)
 
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
@@ -144,7 +216,7 @@ class AVLTree(object):
     """
 
     @staticmethod
-    def create_valid_leaf(key, val, parent):
+    def create_valid_node(key, val, parent=None):
         new_node = AVLNode(key, val, 0)
         new_node.left = AVLNode(None, None, parent=new_node)
         new_node.right = AVLNode(None, None, parent=new_node)
@@ -252,9 +324,10 @@ class AVLTree(object):
             path_len_counter += 1
         return node, is_right, path_len_counter
 
-    def insert(self, key, val):
-        node, is_right, path_len_counter = self.find_insertion_place(key)
-        new_node = self.create_valid_leaf(key, val, node.parent)
+    def insert(self, key, val, finger=False):
+        node, is_right, path_len_counter = self.find_insertion_place(
+            key) if not finger else self.find_finger_insertion_place(key)
+        new_node = self.create_valid_node(key, val, node.parent)
         parent_is_leaf = node.parent.is_leaf()
         if is_right:
             node.parent.right = new_node
@@ -262,7 +335,7 @@ class AVLTree(object):
             node.parent.left = new_node
 
         promotions = 0
-        if new_node.parent.is_root():
+        if new_node.parent.is_root() and parent_is_leaf:
             new_node.parent.promote_height()
             promotions += 1
         elif not parent_is_leaf:
@@ -284,8 +357,18 @@ class AVLTree(object):
     and h is the number of PROMOTE cases during the AVL rebalancing
     """
 
+    def find_finger_insertion_place(self, key):
+        curr = self.max_node()
+        path = 0
+        while curr.key > key and curr.parent is not None and curr.parent.key >= key:
+            path = path + 1
+            curr = curr.parent
+        ltree = AVLTree()
+        ltree.root = curr.left
+        return ltree.find_insertion_place(key)
+
     def finger_insert(self, key, val):
-        return None, -1, -1
+        return self.insert(key, val, True)
 
     """deletes node from the dictionary
 
@@ -308,8 +391,52 @@ class AVLTree(object):
     or the opposite way
     """
 
+    def find_joining_point(self, h, is_right):
+        node = self.root
+        while node.height > h:
+            if is_right:
+                node = node.right
+            else:
+                node = node.left
+        return node
+
     def join(self, tree2, key, val):
-        return
+        tree2_has_bigger_keys = tree2.root.key > self.root.key
+        tree_with_bigger_keys = tree2 if tree2_has_bigger_keys else self
+        tree_with_smaller_keys = self if tree2_has_bigger_keys else tree2
+        taller_tree = self if self.root.height > tree2.root.height else tree2
+        shorter_tree = tree2 if self.root.height > tree2.root.height else self
+        joining_case = JoiningRebalanceCase.from_joining_height_diffs(tree_with_bigger_keys.root.height,
+                                                                      tree_with_smaller_keys.root.height)
+        joining_node = self.create_valid_node(key=key, val=val)
+        joining_node.height = shorter_tree.root.height + 1
+        match joining_case:
+            case JoiningRebalanceCase.CASE0:
+                joining_node.right = tree_with_bigger_keys.root
+                tree_with_bigger_keys.root.parent = joining_node
+                joining_node.left = tree_with_smaller_keys.root
+                tree_with_smaller_keys.root.parent = joining_node
+                self.root = joining_node
+            case JoiningRebalanceCase.CASE1:
+                joining_point = taller_tree.find_joining_point(shorter_tree.root.height, False)
+                joining_node.parent = joining_point.parent
+                joining_node.right = joining_point
+                joining_point.parent.left = joining_node
+                joining_point.parent = joining_node
+                joining_node.left = shorter_tree.root
+                shorter_tree.root.parent = joining_node
+                self.root = taller_tree.root
+                self.rebalance_after_insert(joining_node.parent)
+            case JoiningRebalanceCase.CASE2:
+                joining_point = taller_tree.find_joining_point(shorter_tree.root.height, True)
+                joining_node.parent = joining_point.parent
+                joining_node.left = joining_point
+                joining_point.parent.right = joining_node
+                joining_point.parent = joining_node
+                joining_node.right = shorter_tree.root
+                shorter_tree.root.parent = joining_node
+                self.root = taller_tree.root
+                self.rebalance_after_insert(joining_node.parent)
 
     """splits the dictionary at a given node
 
@@ -348,7 +475,16 @@ class AVLTree(object):
     """
 
     def max_node(self):
-        return None
+        node = self.root
+        while node.right.is_real_node():
+            node = node.right
+        return node
+
+    def min_node(self):
+        node = self.root
+        while node.left.is_real_node():
+            node = node.left
+        return node
 
     """returns the number of items in dictionary 
 
