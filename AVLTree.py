@@ -92,7 +92,8 @@ class AVLNode(object):
         return True
 
     def is_leaf(self):
-        return (self.left is None or not self.left.is_real_node()) and (self.right is None or not self.right.is_real_node())
+        return (self.left is None or not self.left.is_real_node()) and (
+                    self.right is None or not self.right.is_real_node())
 
     def is_root(self):
         return self.parent is None
@@ -206,6 +207,7 @@ class AVLTree(object):
     and then we call on a function of time complexity O(log(n))
     hence the total running time in the worst case is 3log(n)=O(log(n))
     """
+
     def finger_search(self, key):
         node, path = self.finger_search_logic(key)
         if not node.is_real_node():
@@ -392,7 +394,34 @@ class AVLTree(object):
                 node = node.left
         return node
 
-    # def join_case0(self, joining_node, ):
+    def join_case0(self, joining_node, tree_with_bigger_keys, tree_with_smaller_keys):
+        joining_node.right = tree_with_bigger_keys.root
+        tree_with_bigger_keys.root.parent = joining_node
+        joining_node.left = tree_with_smaller_keys.root
+        tree_with_smaller_keys.root.parent = joining_node
+        self.root = joining_node
+
+    def join_case1(self, joining_node, taller_tree, shorter_tree):
+        joining_point = taller_tree.find_joining_point(shorter_tree.root.height, False)
+        joining_node.parent = joining_point.parent
+        joining_node.right = joining_point
+        joining_point.parent.left = joining_node
+        joining_point.parent = joining_node
+        joining_node.left = shorter_tree.root
+        shorter_tree.root.parent = joining_node
+        self.root = taller_tree.root
+        self.rebalance_after_insert(joining_node.parent)
+
+    def join_case2(self, joining_node, taller_tree, shorter_tree):
+        joining_point = taller_tree.find_joining_point(shorter_tree.root.height, True)
+        joining_node.parent = joining_point.parent
+        joining_node.left = joining_point
+        joining_point.parent.right = joining_node
+        joining_point.parent = joining_node
+        joining_node.right = shorter_tree.root
+        shorter_tree.root.parent = joining_node
+        self.root = taller_tree.root
+        self.rebalance_after_insert(joining_node.parent)
 
     def join(self, tree2, key, val):
         tree2_has_bigger_keys = tree2.root.key > self.root.key
@@ -403,34 +432,14 @@ class AVLTree(object):
         joining_case = JoiningRebalanceCase.from_joining_height_diffs(tree_with_bigger_keys.root.height,
                                                                       tree_with_smaller_keys.root.height)
         joining_node = self.create_valid_node(key=key, val=val)
-        joining_node.height = shorter_tree.root.height + 1
+        joining_node.height = shorter_tree.root.height+1
         match joining_case:
             case JoiningRebalanceCase.CASE0:
-                joining_node.right = tree_with_bigger_keys.root
-                tree_with_bigger_keys.root.parent = joining_node
-                joining_node.left = tree_with_smaller_keys.root
-                tree_with_smaller_keys.root.parent = joining_node
-                self.root = joining_node
+                self.join_case0(joining_node, tree_with_bigger_keys, tree_with_smaller_keys)
             case JoiningRebalanceCase.CASE1:
-                joining_point = taller_tree.find_joining_point(shorter_tree.root.height, False)
-                joining_node.parent = joining_point.parent
-                joining_node.right = joining_point
-                joining_point.parent.left = joining_node
-                joining_point.parent = joining_node
-                joining_node.left = shorter_tree.root
-                shorter_tree.root.parent = joining_node
-                self.root = taller_tree.root
-                self.rebalance_after_insert(joining_node.parent)
+                self.join_case1(joining_node, taller_tree, shorter_tree)
             case JoiningRebalanceCase.CASE2:
-                joining_point = taller_tree.find_joining_point(shorter_tree.root.height, True)
-                joining_node.parent = joining_point.parent
-                joining_node.left = joining_point
-                joining_point.parent.right = joining_node
-                joining_point.parent = joining_node
-                joining_node.right = shorter_tree.root
-                shorter_tree.root.parent = joining_node
-                self.root = taller_tree.root
-                self.rebalance_after_insert(joining_node.parent)
+                self.join_case2(joining_node, taller_tree, shorter_tree)
 
     """splits the dictionary at a given node
 
