@@ -92,18 +92,18 @@ class AVLNode(object):
         return True
 
     def is_leaf(self):
-        return (not self.left.is_real_node()) and (not self.right.is_real_node())
+        return (self.left is None or not self.left.is_real_node()) and (self.right is None or not self.right.is_real_node())
 
     def is_root(self):
         return self.parent is None
 
     def is_right_child(self):
-        if self.parent is not None and self.parent.right is not None and self.parent.right.key == self.key:
+        if self.parent is not None and self.parent.right is not None and self.parent.right is self:
             return True
         return False
 
     def is_left_child(self):
-        if self.parent is not None and self.parent.left is not None and self.parent.left.key == self.key:
+        if self.parent is not None and self.parent.left is not None and self.parent.left is self:
             return True
         return False
 
@@ -154,14 +154,12 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     """
 
-    def search_envelope(self, k, path):
-        if not self.root.is_real_node():
-            return None, path + 1
-        if self.root.key == k:
-            return self.root, path + 1
+    def search_logic(self, k, path):
+        if not self.root.is_real_node() or self.root.key == k:
+            return self.root, path
         if self.root.key > k:
-            return self.left_subtree().search_envelope(k, path + 1)
-        return self.right_subtree().search_envelope(k, path + 1)
+            return self.left_subtree().search_logic(k, path + 1)
+        return self.right_subtree().search_logic(k, path + 1)
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
         
@@ -173,34 +171,46 @@ class AVLTree(object):
     """
 
     def search(self, key):
-        return self.search_envelope(key, 0)
+        node, path = self.search_logic(key, 0)
+        if not node.is_real_node():
+            return node.key, path
+        return node, path
 
-    """searches for a node in the dictionary corresponding to the key, starting at the max
-
-    @type key: int
-    @param key: a key to be searched
-    @rtype: (AVLNode,int)
-    @returns: a tuple (x,e) where x is the node corresponding to key (or None if not found),
-    and e is the number of edges on the path between the starting node and ending node+1.
-    """
-
-    """
-    time complexity is O(log(n)), since the first and second loops will have at most log(n) iterations of O(1) complexity
-    and then we call on a function of time complexity O(log(n))
-    hence the total running time in the worst case is 3log(n)=O(log(n))
-    """
-
-    def finger_search(self, key):
+    def finger_search_logic(self, key):
         curr = self.max_node()
+        if key > curr.key:
+            return curr.right, 1
         path = 0
         while curr.key > key and curr.parent is not None and curr.parent.key >= key:
             path = path + 1
             curr = curr.parent
         if curr.key == key:
             return curr, path
-        ltree = AVLTree()
-        ltree.root = curr.left
-        return ltree.search_envelope(key, path + 1)
+        if curr.left.is_real_node():
+            ltree = AVLTree()
+            ltree.root = curr.left
+            return ltree.search_logic(key, path + 1)
+        return curr.left, path
+
+    """searches for a node in the dictionary corresponding to the key, starting at the max
+
+      @type key: int
+      @param key: a key to be searched
+      @rtype: (AVLNode,int)
+      @returns: a tuple (x,e) where x is the node corresponding to key (or None if not found),
+      and e is the number of edges on the path between the starting node and ending node+1.
+      """
+
+    """
+    time complexity is O(log(n)), since the first and second loops will have at most log(n) iterations of O(1) complexity
+    and then we call on a function of time complexity O(log(n))
+    hence the total running time in the worst case is 3log(n)=O(log(n))
+    """
+    def finger_search(self, key):
+        node, path = self.finger_search_logic(key)
+        if not node.is_real_node():
+            return node.key, path
+        return node, path
 
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
@@ -311,25 +321,14 @@ class AVLTree(object):
         return promotions
 
     def find_insertion_place(self, key):
-        node = self.root
-        is_right = False
-        path_len_counter = 0
-        while node.is_real_node():
-            if node.key > key:
-                node = node.left
-                is_right = False
-            else:
-                node = node.right
-                is_right = True
-            path_len_counter += 1
-        return node, is_right, path_len_counter
+        return self.search_logic(key, 0)
 
     def insert(self, key, val, finger=False):
-        node, is_right, path_len_counter = self.find_insertion_place(
+        node, path_len_counter = self.find_insertion_place(
             key) if not finger else self.find_finger_insertion_place(key)
         new_node = self.create_valid_node(key, val, node.parent)
         parent_is_leaf = node.parent.is_leaf()
-        if is_right:
+        if node.is_right_child():
             node.parent.right = new_node
         else:
             node.parent.left = new_node
@@ -358,14 +357,7 @@ class AVLTree(object):
     """
 
     def find_finger_insertion_place(self, key):
-        curr = self.max_node()
-        path = 0
-        while curr.key > key and curr.parent is not None and curr.parent.key >= key:
-            path = path + 1
-            curr = curr.parent
-        ltree = AVLTree()
-        ltree.root = curr.left
-        return ltree.find_insertion_place(key)
+        return self.finger_search_logic(key)
 
     def finger_insert(self, key, val):
         return self.insert(key, val, True)
@@ -399,6 +391,8 @@ class AVLTree(object):
             else:
                 node = node.left
         return node
+
+    # def join_case0(self, joining_node, ):
 
     def join(self, tree2, key, val):
         tree2_has_bigger_keys = tree2.root.key > self.root.key
