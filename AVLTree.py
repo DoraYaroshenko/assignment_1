@@ -8,32 +8,49 @@ from typing import Optional
 from enum import Enum
 
 
-class InsertRebalanceCase(Enum):
-    CASE0 = 0
-    CASE1 = 1
-    CASE2_1 = 21
-    CASE2_2 = 22
-    CASE3_1 = 31
-    CASE3_2 = 32
+class RebalanceCase(Enum):
+    CASE_TERMINAL = 0
+    CASE_DIFF_0_1_OR_1_0 = 1
+    CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2 = 2
+    CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1 = 3
+    CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1 = 4
+    CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2 = 5
+    CASE_DIFF_2_2 = 6
+    CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1 = 7
+    # CASE_PARENT_DIFF_3_1_CHILD_DIFF_1_2 = 8
+    # CASE_PARENT_DIFF_3_1_CHILD_DIFF_2_1 = 9
+    CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1 = 10
+
+    # CASE_PARENT_DIFF_1_3_CHILD_DIFF_2_1 = 11
+    # CASE_PARENT_DIFF_1_3_CHILD_DIFF_1_2 = 12
 
     @classmethod
-    def from_insert_height_diffs(cls, parent_left_diff, parent_right_diff, node_left_diff, node_right_diff):
-        if parent_left_diff == 1 and parent_right_diff == 1:
-            return InsertRebalanceCase.CASE0
+    def from_height_diffs(cls, parent_left_diff, parent_right_diff, node_left_diff, node_right_diff):
+        if (parent_left_diff == 1 and parent_right_diff == 1) or (parent_left_diff == 2 and parent_right_diff == 1) or (
+                parent_left_diff == 1 and parent_right_diff == 2):
+            return RebalanceCase.CASE_TERMINAL
         elif (parent_left_diff == 0 and parent_right_diff == 1) or (parent_left_diff == 1 and parent_right_diff == 0):
-            return InsertRebalanceCase.CASE1
+            return RebalanceCase.CASE_DIFF_0_1_OR_1_0
         elif (parent_left_diff == 0 and parent_right_diff == 2) and (
                 node_left_diff == 1 and node_right_diff == 2):
-            return InsertRebalanceCase.CASE2_1
+            return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2
         elif (parent_left_diff == 2 and parent_right_diff == 0) and (
                 node_left_diff == 2 and node_right_diff == 1):
-            return InsertRebalanceCase.CASE2_2
+            return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1
         elif (parent_left_diff == 0 and parent_right_diff == 2) and (
                 node_left_diff == 2 and node_right_diff == 1):
-            return InsertRebalanceCase.CASE3_1
+            return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1
         elif (parent_left_diff == 2 and parent_right_diff == 0) and (
                 node_left_diff == 1 and node_right_diff == 2):
-            return InsertRebalanceCase.CASE3_2
+            return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2
+        elif parent_left_diff == 2 and parent_right_diff == 2:
+            return RebalanceCase.CASE_DIFF_2_2
+        elif (parent_left_diff == 2 and parent_right_diff == 0) and (node_left_diff == 1 and node_right_diff == 1):
+            return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1
+        elif (parent_left_diff == 0 and parent_right_diff == 2) and (node_left_diff == 1 and node_right_diff == 1):
+            return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1
+        # elif parent_left_diff == 1 and parent_right_diff == 3:
+        #     return RebalanceCase.CASE_PARENT_DIFF_3_1_CHILD_DIFF_1_2
         else:
             raise Exception
 
@@ -79,12 +96,12 @@ class AVLNode(object):
     @returns: False if self is a virtual node, True otherwise.
     """
 
-    def promote_height(self):
-        self.height += 1
-        return 1
+    def promote_height(self, delta=1):
+        self.height += delta
+        return delta
 
-    def demote_height(self):
-        self.height -= 1
+    def demote_height(self, delta=1):
+        self.height -= delta
 
     def is_real_node(self):
         if self is None or self.key is None:
@@ -93,7 +110,7 @@ class AVLNode(object):
 
     def is_leaf(self):
         return (self.left is None or not self.left.is_real_node()) and (
-                    self.right is None or not self.right.is_real_node())
+                self.right is None or not self.right.is_real_node())
 
     def is_root(self):
         return self.parent is None
@@ -281,7 +298,7 @@ class AVLTree(object):
         AVLTree.rotate_right(self, node.right)
         AVLTree.rotate_left(self, node)
 
-    def rebalance_after_insert(self, node):
+    def rebalance_after_insertion_or_join(self, node):
         promotions = 0
         parent = node.parent
         promotions += node.promote_height()
@@ -292,34 +309,67 @@ class AVLTree(object):
         parent_right_diff = parent.height - parent.right.height
         node_left_diff = node.height - node.left.height
         node_right_diff = node.height - node.right.height
-        insertion_case = InsertRebalanceCase.from_insert_height_diffs(
+        rebalance_case = RebalanceCase.from_height_diffs(
             parent_left_diff=parent_left_diff, parent_right_diff=parent_right_diff,
             node_left_diff=node_left_diff, node_right_diff=node_right_diff
         )
 
-        match insertion_case:
-            case InsertRebalanceCase.CASE0:
+        match rebalance_case:
+            case RebalanceCase.CASE_TERMINAL:
                 pass
-            case InsertRebalanceCase.CASE1:
-                promotions += self.rebalance_after_insert(parent)
-            case InsertRebalanceCase.CASE2_1:
+            case RebalanceCase.CASE_DIFF_0_1_OR_1_0:
+                promotions += self.rebalance_after_insertion_or_join(parent)
+            case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2:
                 self.rotate_right(parent)
                 parent.demote_height()
-            case InsertRebalanceCase.CASE2_2:
+            case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1:
                 self.rotate_left(parent)
                 parent.demote_height()
-            case InsertRebalanceCase.CASE3_1:
+            case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1:
                 right = node.right
                 self.left_right_double_rotation(parent)
                 node.demote_height()
                 parent.demote_height()
                 right.promote_height()
-            case InsertRebalanceCase.CASE3_2:
+            case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2:
                 left = node.left
                 self.right_left_double_rotation(parent)
                 node.demote_height()
                 parent.demote_height()
                 left.promote_height()
+            case RebalanceCase.CASE_DIFF_2_2:
+                parent.demote_height()
+                promotions += self.rebalance_after_insertion_or_join(parent)
+            case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1:
+                self.rotate_left(parent)
+                # parent.demote_height()
+                # node.promote_height()
+                promotions += self.rebalance_after_insertion_or_join(node)
+            # case RebalanceCase.CASE_PARENT_DIFF_3_1_CHILD_DIFF_2_1:
+            #     self.rotate_left(parent)
+            #     parent.demote_height(2)
+            #     promotions += self.rebalance(node)
+            # case RebalanceCase.CASE_PARENT_DIFF_3_1_CHILD_DIFF_1_2:
+            #     self.right_left_double_rotation(parent)
+            #     parent.demote_height(2)
+            #     node.demote_height()
+            #     node.left.promote_height()
+            #     promotions += self.rebalance(parent.parent)
+            case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1:
+                self.rotate_right(parent)
+                # parent.demote_height()
+                # node.promote_height()
+                promotions += self.rebalance_after_insertion_or_join(node)
+            # case RebalanceCase.CASE_PARENT_DIFF_1_3_CHILD_DIFF_1_2:
+            #     self.rotate_right(parent)
+            #     parent.demote_height(2)
+            #     promotions += self.rebalance(node)
+            # case RebalanceCase.CASE_PARENT_DIFF_1_3_CHILD_DIFF_2_1:
+            #     self.left_right_double_rotation(parent)
+            #     parent.demote_height(2)
+            #     node.demote_height()
+            #     node.right.promote_height()
+            #     promotions += self.rebalance(parent.parent)
         return promotions
 
     def find_insertion_place(self, key):
@@ -342,7 +392,7 @@ class AVLTree(object):
         elif not parent_is_leaf:
             pass
         else:
-            promotions = self.rebalance_after_insert(new_node.parent)
+            promotions = self.rebalance_after_insertion_or_join(new_node.parent)
         return new_node, path_len_counter, promotions
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
@@ -410,7 +460,7 @@ class AVLTree(object):
         joining_node.left = shorter_tree.root
         shorter_tree.root.parent = joining_node
         self.root = taller_tree.root
-        self.rebalance_after_insert(joining_node.parent)
+        self.rebalance_after_insertion_or_join(joining_node)
 
     def join_case2(self, joining_node, taller_tree, shorter_tree):
         joining_point = taller_tree.find_joining_point(shorter_tree.root.height, True)
@@ -421,7 +471,7 @@ class AVLTree(object):
         joining_node.right = shorter_tree.root
         shorter_tree.root.parent = joining_node
         self.root = taller_tree.root
-        self.rebalance_after_insert(joining_node.parent)
+        self.rebalance_after_insertion_or_join(joining_node)
 
     def join(self, tree2, key, val):
         tree2_has_bigger_keys = tree2.root.key > self.root.key
@@ -432,7 +482,7 @@ class AVLTree(object):
         joining_case = JoiningRebalanceCase.from_joining_height_diffs(tree_with_bigger_keys.root.height,
                                                                       tree_with_smaller_keys.root.height)
         joining_node = self.create_valid_node(key=key, val=val)
-        joining_node.height = shorter_tree.root.height+1
+        joining_node.height = shorter_tree.root.height
         match joining_case:
             case JoiningRebalanceCase.CASE0:
                 self.join_case0(joining_node, tree_with_bigger_keys, tree_with_smaller_keys)

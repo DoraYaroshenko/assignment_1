@@ -188,11 +188,12 @@ def big_test_tree():
 
 @fixture()
 def build_tree():
-    lst = [3, 5, 8, 7, 4, 2, 1, 6, 0, 9]
-        # [i for i in range(10)]
-    # [i for i in range(10000)]
-    # shuffle(lst)
-    print(lst)
+    lst = [i for i in range(10000)]
+
+    # [3, 5, 8, 7, 4, 2, 1, 6, 0, 9]
+    # [i for i in range(10)]
+    shuffle(lst)
+    # print(lst)
     root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     root.left = AVLNode(key=None, value=None, parent=root)
     root.right = AVLNode(key=None, value=None, parent=root)
@@ -208,17 +209,17 @@ def build_tree():
 
 @fixture()
 def build_tree2():
-    lst = [15,16]
-        # [i for i in range(11, 21)]
-    # [i for i in range(10001, 20001)]
-    # shuffle(lst)
-    print(lst)
+    lst = [i for i in range(10001, 30001)]
+    # [15,16]
+    # [i for i in range(11, 21)]
+    shuffle(lst)
+    # print(lst)
     root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     root.left = AVLNode(key=None, value=None, parent=root)
     root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree(root)
-    num = randrange(2, 10)
-    for number in lst[1:]:
+    num = randrange(2, 20000)
+    for number in lst[1:num]:
         tree.insert(key=number, val=str(number))
     return tree
 
@@ -260,27 +261,43 @@ def test_balance(build_tree):
         build_tree.right_subtree())
 
 
+def check_bst(root):
+    if not root.is_real_node() or (not root.left.is_real_node() and not root.right.is_real_node()):
+        return True
+
+    elif not root.right.is_real_node():
+        return root.left.key < root.key and check_bst(root.left)
+
+    elif not root.left.is_real_node():
+        return root.right.key >= root.key and check_bst(root.right)
+
+    return check_bst(root.left) and check_bst(root.right)
+
+
 def test_children(build_tree):
-    if build_tree.root.right.is_leaf() and build_tree.root.left.is_leaf():
-        left = build_tree.root.left.key if build_tree.root.left.is_real_node() else build_tree.root.key - 1
-        right = build_tree.root.right.key if build_tree.root.right.is_real_node() else build_tree.root.key + 1
-        return left < build_tree.root.key < right
-    return test_children(build_tree.left_subtree()) and test_children(build_tree.right_subtree())
+    assert check_bst(build_tree.root)
+    return check_bst(build_tree.root)
 
 
 def test_is_avl_tree(build_tree):
     print(test_balance(build_tree))
     print(test_children(build_tree))
     assert test_balance(build_tree) and test_children(build_tree)
+    return test_balance(build_tree) and test_children(build_tree)
 
 
 def test_join(build_tree, build_tree2):
-    print_tree(build_tree.root)
-    print_tree(build_tree2.root)
+    # print_tree(build_tree.root)
+    # print_tree(build_tree2.root)
     print(build_tree.size(), build_tree2.size())
-    build_tree.join(build_tree2, 10, 10)
-    print_tree(build_tree.root)
+    build_tree.join(build_tree2, 10000, 10000)
+    # print_tree(build_tree.root)
+    assert test_balance(build_tree) and test_children(build_tree)
     return test_is_avl_tree(build_tree)
+
+
+def test_insert(build_tree):
+    assert test_is_avl_tree(build_tree)
 
 
 def test_finger_search(build_tree):
