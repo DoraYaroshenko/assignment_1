@@ -17,12 +17,7 @@ class RebalanceCase(Enum):
     CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2 = 5
     CASE_DIFF_2_2 = 6
     CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1 = 7
-    # CASE_PARENT_DIFF_3_1_CHILD_DIFF_1_2 = 8
-    # CASE_PARENT_DIFF_3_1_CHILD_DIFF_2_1 = 9
     CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1 = 10
-
-    # CASE_PARENT_DIFF_1_3_CHILD_DIFF_2_1 = 11
-    # CASE_PARENT_DIFF_1_3_CHILD_DIFF_1_2 = 12
 
     @classmethod
     def from_height_diffs(cls, parent_left_diff, parent_right_diff, node_left_diff, node_right_diff):
@@ -49,8 +44,6 @@ class RebalanceCase(Enum):
             return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1
         elif (parent_left_diff == 0 and parent_right_diff == 2) and (node_left_diff == 1 and node_right_diff == 1):
             return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1
-        # elif parent_left_diff == 1 and parent_right_diff == 3:
-        #     return RebalanceCase.CASE_PARENT_DIFF_3_1_CHILD_DIFF_1_2
         else:
             raise Exception
 
@@ -342,34 +335,10 @@ class AVLTree(object):
                 promotions += self.rebalance_after_insertion_or_join(parent)
             case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1:
                 self.rotate_left(parent)
-                # parent.demote_height()
-                # node.promote_height()
                 promotions += self.rebalance_after_insertion_or_join(node)
-            # case RebalanceCase.CASE_PARENT_DIFF_3_1_CHILD_DIFF_2_1:
-            #     self.rotate_left(parent)
-            #     parent.demote_height(2)
-            #     promotions += self.rebalance(node)
-            # case RebalanceCase.CASE_PARENT_DIFF_3_1_CHILD_DIFF_1_2:
-            #     self.right_left_double_rotation(parent)
-            #     parent.demote_height(2)
-            #     node.demote_height()
-            #     node.left.promote_height()
-            #     promotions += self.rebalance(parent.parent)
             case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1:
                 self.rotate_right(parent)
-                # parent.demote_height()
-                # node.promote_height()
                 promotions += self.rebalance_after_insertion_or_join(node)
-            # case RebalanceCase.CASE_PARENT_DIFF_1_3_CHILD_DIFF_1_2:
-            #     self.rotate_right(parent)
-            #     parent.demote_height(2)
-            #     promotions += self.rebalance(node)
-            # case RebalanceCase.CASE_PARENT_DIFF_1_3_CHILD_DIFF_2_1:
-            #     self.left_right_double_rotation(parent)
-            #     parent.demote_height(2)
-            #     node.demote_height()
-            #     node.right.promote_height()
-            #     promotions += self.rebalance(parent.parent)
         return promotions
 
     def find_insertion_place(self, key):
@@ -450,6 +419,7 @@ class AVLTree(object):
         joining_node.left = tree_with_smaller_keys.root
         tree_with_smaller_keys.root.parent = joining_node
         self.root = joining_node
+        joining_node.promote_height()
 
     def join_case1(self, joining_node, taller_tree, shorter_tree):
         joining_point = taller_tree.find_joining_point(shorter_tree.root.height, False)

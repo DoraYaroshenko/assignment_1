@@ -6,6 +6,8 @@ from AVLTree import AVLNode, AVLTree
 
 from pytest import fixture
 
+from tqdm import tqdm
+
 
 @fixture
 def medium_test_tree():
@@ -188,12 +190,16 @@ def big_test_tree():
 
 @fixture()
 def build_tree():
+    return build_tree1_from_array()
+
+
+def build_tree1_from_array():
     lst = [i for i in range(10000)]
 
     # [3, 5, 8, 7, 4, 2, 1, 6, 0, 9]
     # [i for i in range(10)]
     shuffle(lst)
-    # print(lst)
+    print(lst)
     root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     root.left = AVLNode(key=None, value=None, parent=root)
     root.right = AVLNode(key=None, value=None, parent=root)
@@ -201,27 +207,31 @@ def build_tree():
     promotions = 0
     for i in lst[1:]:
         promotions = tree.insert(key=i, val=str(i))[2]
-    valid_proms = promotions <= math.log2(10)
+    valid_proms = promotions <= math.log2(10000)
     # print(valid_proms)
     # print_tree(tree.root)
     return tree
 
 
-@fixture()
-def build_tree2():
-    lst = [i for i in range(10001, 30001)]
+def build_tree2_from_array():
+    lst = [i for i in range(10001, 20001)]
     # [15,16]
     # [i for i in range(11, 21)]
     shuffle(lst)
-    # print(lst)
+    print(lst)
     root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     root.left = AVLNode(key=None, value=None, parent=root)
     root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree(root)
-    num = randrange(2, 20000)
+    num = randrange(2, 10000)
     for number in lst[1:num]:
         tree.insert(key=number, val=str(number))
     return tree
+
+
+@fixture()
+def build_tree2():
+    return build_tree2_from_array()
 
 
 def print_tree(node, level=0, prefix="Root: "):
@@ -294,6 +304,14 @@ def test_join(build_tree, build_tree2):
     # print_tree(build_tree.root)
     assert test_balance(build_tree) and test_children(build_tree)
     return test_is_avl_tree(build_tree)
+
+
+def test_10000_times():
+    for i in tqdm(range(1000)):
+        tree1 = build_tree1_from_array()
+        tree2 = build_tree2_from_array()
+        flag = test_join(tree1, tree2)
+        assert flag
 
 
 def test_insert(build_tree):
