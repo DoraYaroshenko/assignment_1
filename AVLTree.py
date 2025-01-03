@@ -166,7 +166,7 @@ class AVLTree(object):
     """
 
     def search_logic(self, k, path):
-        if not self.root.is_real_node() or self.root.key == k:
+        if self.root is None or not self.root.is_real_node() or self.root.key == k:
             return self.root, path
         if self.root.key > k:
             return self.left_subtree().search_logic(k, path + 1)
@@ -183,11 +183,13 @@ class AVLTree(object):
 
     def search(self, key):
         node, path = self.search_logic(key, 0)
-        if not node.is_real_node():
-            return node.key, path
+        if node is None or not node.is_real_node():
+            return None, path
         return node, path
 
     def finger_search_logic(self, key):
+        if self.root is None:
+            return self.root, 0
         curr = self.max_node()
         if key > curr.key:
             return curr.right, 1
@@ -220,8 +222,8 @@ class AVLTree(object):
 
     def finger_search(self, key):
         node, path = self.finger_search_logic(key)
-        if not node.is_real_node():
-            return node.key, path
+        if node is None or not node.is_real_node():
+            return None, path
         return node, path
 
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
@@ -347,6 +349,9 @@ class AVLTree(object):
     def insert(self, key, val, finger=False):
         node, path_len_counter = self.find_insertion_place(
             key) if not finger else self.find_finger_insertion_place(key)
+        if node is None:
+            self.root = self.create_valid_node(key, val)
+            return self.root, 0, 0
         new_node = self.create_valid_node(key, val, node.parent)
         parent_is_leaf = node.parent.is_leaf()
         if node.is_right_child():

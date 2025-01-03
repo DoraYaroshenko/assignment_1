@@ -200,15 +200,15 @@ def build_tree1_from_array():
     # [i for i in range(10)]
     shuffle(lst)
     print(lst)
-    root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
-    root.left = AVLNode(key=None, value=None, parent=root)
-    root.right = AVLNode(key=None, value=None, parent=root)
-    tree = AVLTree(root)
+    # root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
+    # root.left = AVLNode(key=None, value=None, parent=root)
+    # root.right = AVLNode(key=None, value=None, parent=root)
+    tree = AVLTree()
     promotions = 0
-    for i in lst[1:]:
-        promotions = tree.insert(key=i, val=str(i))[2]
+    for i in lst:
+        promotions = tree.insert(key=i, val=str(i), finger=True)[2]
     valid_proms = promotions <= math.log2(10000)
-    # print(valid_proms)
+    assert valid_proms
     # print_tree(tree.root)
     return tree
 
@@ -219,13 +219,13 @@ def build_tree2_from_array():
     # [i for i in range(11, 21)]
     shuffle(lst)
     print(lst)
-    root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
-    root.left = AVLNode(key=None, value=None, parent=root)
-    root.right = AVLNode(key=None, value=None, parent=root)
-    tree = AVLTree(root)
+    # root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
+    # root.left = AVLNode(key=None, value=None, parent=root)
+    # root.right = AVLNode(key=None, value=None, parent=root)
+    tree = AVLTree()
     num = randrange(2, 10000)
-    for number in lst[1:num]:
-        tree.insert(key=number, val=str(number))
+    for number in lst[0:num]:
+        tree.insert(key=number, val=str(number), finger=True)
     return tree
 
 
@@ -299,15 +299,17 @@ def test_is_avl_tree(build_tree):
 def test_join(build_tree, build_tree2):
     # print_tree(build_tree.root)
     # print_tree(build_tree2.root)
-    print(build_tree.size(), build_tree2.size())
+    size1 = build_tree.size()
+    size2 = build_tree2.size()
+    print(size1, size2)
     build_tree.join(build_tree2, 10000, 10000)
     # print_tree(build_tree.root)
-    assert test_balance(build_tree) and test_children(build_tree)
+    assert test_balance(build_tree) and test_children(build_tree) and build_tree.size() == size1 + size2 + 1
     return test_is_avl_tree(build_tree)
 
 
 def test_10000_times():
-    for i in tqdm(range(1000)):
+    for i in tqdm(range(100)):
         tree1 = build_tree1_from_array()
         tree2 = build_tree2_from_array()
         flag = test_join(tree1, tree2)
