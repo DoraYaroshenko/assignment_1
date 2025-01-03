@@ -511,78 +511,85 @@ class AVLTree(object):
             ptree = self.parent_tree(node)
             ptree.balance_post_deletion()
 
+    def balance_post_deletion_case0(self, pivot):
+        if pivot.parent is not None:
+            case_parent = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot.parent)
+            if case_parent == DeleteRebalanceCase.CASE0:
+                pass
+            else:
+                self.balance_post_deletion_helper(pivot)
+
+    def balance_post_deletion_case1(self, pivot):
+        pivot.demote_height()
+        self.balance_post_deletion_helper(pivot)
+
+    def balance_post_deletion_case2_1(self, pivot):
+        new_root = pivot.right
+        new_root.promote_height()
+        pivot.demote_height()
+        self.rotate_left(pivot)
+        self.balance_post_deletion_helper(new_root)
+
+    def balance_post_deletion_case2_2(self, pivot):
+        new_root = pivot.left
+        new_root.promote_height()
+        pivot.demote_height()
+        self.rotate_right(pivot)
+        self.balance_post_deletion_helper(new_root)
+
+    def balance_post_deletion_case3_1(self, pivot):
+        pivot.demote_height()
+        pivot.demote_height()
+        self.rotate_left(self.root)
+        self.balance_post_deletion_helper(pivot)
+
+    def balance_post_deletion_case3_2(self, pivot):
+        pivot.demote_height()
+        pivot.demote_height()
+        self.rotate_right(self.root)
+        self.balance_post_deletion_helper(pivot)
+
+    def balance_post_deletion_case4_1(self, pivot):
+        new_root = pivot.right.left
+        new_right = pivot.right
+        pivot.demote_height()
+        pivot.demote_height()
+        new_right.demote_height()
+        new_root.promote_height()
+        self.right_left_double_rotation(pivot)
+        self.balance_post_deletion_helper(new_root)
+
+    def balance_post_deletion_case4_2(self, pivot):
+        new_root = pivot.left.right
+        new_left = pivot.left
+        pivot.demote_height()
+        pivot.demote_height()
+        new_left.demote_height()
+        new_root.promote_height()
+        self.left_right_double_rotation(pivot)
+        self.balance_post_deletion_helper(new_root)
+
     def balance_post_deletion(self):
         pivot = self.root
         if pivot.is_real_node():
             deletion_rebalance_case = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot)
             match deletion_rebalance_case:
                 case DeleteRebalanceCase.CASE0:  # if node is balanced
-                    if pivot.parent is not None:
-                        case_parent = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot.parent)
-                        if case_parent == DeleteRebalanceCase.CASE0:
-                            pass
-                        else:
-                            ptree = self.parent_tree(pivot)
-                            ptree.balance_post_deletion()
+                    self.balance_post_deletion_case0(pivot)
                 case DeleteRebalanceCase.CASE1:
-                    pivot.demote_height()
-                    if pivot.parent is not None:
-                        ptree = self.parent_tree(pivot)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case1(pivot)
                 case DeleteRebalanceCase.CASE2_1:
-                    new_root = pivot.right
-                    new_root.promote_height()
-                    pivot.demote_height()
-                    self.rotate_left(pivot)
-                    if new_root.parent is not None:
-                        ptree = self.parent_tree(new_root)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case2_1(pivot)
                 case DeleteRebalanceCase.CASE2_2:
-                    new_root = pivot.left
-                    new_root.promote_height()
-                    pivot.demote_height()
-                    self.rotate_right(pivot)
-                    if new_root.parent is not None:
-                        ptree = self.parent_tree(new_root)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case2_2(pivot)
                 case DeleteRebalanceCase.CASE3_1:
-                    pivot.demote_height()
-                    pivot.demote_height()
-                    self.rotate_left(self.root)
-                    if pivot.parent is not None:
-                        ptree = self.parent_tree(pivot)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case3_1(pivot)
                 case DeleteRebalanceCase.CASE3_2:
-                    pivot.demote_height()
-                    pivot.demote_height()
-                    self.rotate_right(self.root)
-                    if pivot.parent is not None:
-                        ptree = self.parent_tree(pivot)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case3_2(pivot)
                 case DeleteRebalanceCase.CASE4_1:
-                    new_root = pivot.right.left
-                    new_right = pivot.right
-                    pivot.demote_height()
-                    pivot.demote_height()
-                    new_right.demote_height()
-                    new_root.promote_height()
-                    self.rotate_right(new_right)
-                    self.rotate_left(pivot)
-                    if new_root.parent is not None:
-                        ptree = self.parent_tree(new_root)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case4_1(pivot)
                 case DeleteRebalanceCase.CASE4_2:
-                    new_root = pivot.left.right
-                    new_left = pivot.left
-                    pivot.demote_height()
-                    pivot.demote_height()
-                    new_left.demote_height()
-                    new_root.promote_height()
-                    self.rotate_left(new_left)
-                    self.rotate_right(pivot)
-                    if new_root.parent is not None:
-                        ptree = self.parent_tree(new_root)
-                        ptree.balance_post_deletion()
+                    self.balance_post_deletion_case4_2(pivot)
 
     """joins self with item and another AVLTree
     
@@ -665,7 +672,38 @@ class AVLTree(object):
     """
 
     def split(self, node):
-        return None, None
+        curr_node = self.root
+        # tree_with_smaller_keys = AVLTree()
+        # tree_with_bigger_keys = AVLTree()
+        while curr_node.is_real_node():
+            if curr_node.key > node.key:
+                curr_node = curr_node.left
+            elif curr_node.key < node.key:
+                curr_node = curr_node.right
+            else:
+                break
+        node_right_subtree = AVLTree(node.right)
+        node_left_subtree = AVLTree(node.left)
+        tree_with_bigger_keys = node_right_subtree
+        tree_with_smaller_keys = node_left_subtree
+        # node_right_subtree.join(tree_with_bigger_keys, curr_node.right.key, curr_node.right.value)
+        # node_left_subtree.join(tree_with_smaller_keys, curr_node.left.key, curr_node.left.value)
+        while curr_node.parent is not None:
+            is_right = curr_node.is_right_child()
+            curr_node = curr_node.parent
+            if is_right:
+                node_left_subtree = AVLTree(curr_node.left)
+                if tree_with_smaller_keys.size() == 0:
+                    tree_with_smaller_keys = node_left_subtree
+                else:
+                    node_left_subtree.join(tree_with_smaller_keys, curr_node.key, curr_node.value)
+            else:
+                node_right_subtree = AVLTree(curr_node.right)
+                if tree_with_bigger_keys.size() == 0:
+                    tree_with_bigger_keys = node_right_subtree
+                else:
+                    node_right_subtree.join(tree_with_bigger_keys, curr_node.key, curr_node.value)
+        return tree_with_smaller_keys, tree_with_bigger_keys
 
     """returns an array representing dictionary 
     
