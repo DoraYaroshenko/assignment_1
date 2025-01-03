@@ -195,6 +195,8 @@ def build_tree():
 
 def build_tree1_from_array():
     lst = [i for i in range(10000)]
+    # [2, 3, 1, 7, 5, 8, 4, 0, 9, 6]
+    # [i for i in range(10)]
 
     # [3, 5, 8, 7, 4, 2, 1, 6, 0, 9]
     # [i for i in range(10)]
@@ -308,7 +310,25 @@ def test_join(build_tree, build_tree2):
     return test_is_avl_tree(build_tree)
 
 
-def test_10000_times():
+def test_deletion(build_tree):
+    print_tree(build_tree.root)
+    num = randrange(0, 10000)
+    node = build_tree.search(num)[0]
+    print(node.key)
+    build_tree.delete(node)
+    print_tree(build_tree.root)
+    assert test_is_avl_tree(build_tree) and build_tree.search(num)[0] is None
+    return test_is_avl_tree(build_tree) and build_tree.search(num)[0] is None
+
+
+def test_delete_10000_times():
+    for i in tqdm(range(10)):
+        tree1 = build_tree1_from_array()
+        flag = test_deletion(tree1)
+        assert flag
+
+
+def test_join_10000_times():
     for i in tqdm(range(100)):
         tree1 = build_tree1_from_array()
         tree2 = build_tree2_from_array()

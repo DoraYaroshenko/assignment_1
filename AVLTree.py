@@ -63,6 +63,37 @@ class JoiningRebalanceCase(Enum):
             return JoiningRebalanceCase.CASE2
 
 
+class DeleteRebalanceCase(Enum):
+    CASE0 = 0  # node balanced
+    CASE1 = 1
+    CASE2_1 = 21
+    CASE2_2 = 22
+    CASE3_1 = 31
+    CASE3_2 = 32
+    CASE4_1 = 41
+    CASE4_2 = 42
+
+    @classmethod
+    def determine_balance_after_deletion_case(cls, node):
+        if node.balance_factor() == 0 and node.height - node.left.height == 2:  # node is 2,2
+            return DeleteRebalanceCase.CASE1
+        if node.balance_factor() == 2:  # node is 3,1
+            if node.right.balance_factor() == 0:  # right of node is 1,1
+                return DeleteRebalanceCase.CASE2_1
+            if node.right.balance_factor() == -1:  # right of node is 1,2
+                return DeleteRebalanceCase.CASE4_1
+            if node.right.balance_factor() == 1:  # right of node is 2,1
+                return DeleteRebalanceCase.CASE3_1
+        if node.balance_factor() == -2:  # node is 1,3
+            if node.left.balance_factor() == 0:  # left of node is 1,1
+                return DeleteRebalanceCase.CASE2_2
+            if node.left.balance_factor() == -1:
+                return DeleteRebalanceCase.CASE3_2
+            if node.left.balance_factor() == 1:
+                return DeleteRebalanceCase.CASE4_2
+        return DeleteRebalanceCase.CASE0
+
+
 """A class represnting a node in an AVL tree"""
 
 
@@ -88,6 +119,21 @@ class AVLNode(object):
     @rtype: bool
     @returns: False if self is a virtual node, True otherwise.
     """
+
+    def balance_factor(self):
+        if not self.is_real_node():
+            return 0
+        return (self.height - self.left.height) - (self.height - self.right.height)
+
+    def has_only_right_child(self):
+        if not self.left.is_real_node() and self.right.is_real_node():
+            return True
+        return False
+
+    def has_only_left_child(self):
+        if not self.right.is_real_node() and self.left.is_real_node():
+            return True
+        return False
 
     def promote_height(self, delta=1):
         self.height += delta
@@ -131,6 +177,23 @@ class AVLTree(object):
 
     def __init__(self, root=None):
         self.root: AVLNode = root
+
+    def successor(self, node):
+        if node.right.is_real_node():
+            left_subtree = AVLTree(node.right)
+            return left_subtree.min_node()
+        curr = node
+        next = node.parent
+        while next is not None and curr is next.right:
+            curr = next
+            next = curr.parent
+        return next
+
+    @staticmethod
+    def parent_tree(node):
+        ptree = AVLTree()
+        ptree.root = node.parent
+        return ptree
 
     """
     method for creation of the left subtree of the current tree
@@ -395,19 +458,143 @@ class AVLTree(object):
     """
 
     def delete(self, node):
-        return
+        if not node.is_real_node():
+            return
+        if node.is_leaf():
+            new_pointer = node.right
+            if node.is_root():
+                self.root = None
+            elif node.is_right_child():  # if node is the right child of its parent
+                node.parent.right = new_pointer
+            else:
+                node.parent.left = new_pointer
+            pivot = node.parent
+            new_pointer.parent = node.parent
+        elif node.has_only_right_child():  # if node only has a right child, suitable to if node is a leaf
+            new_pointer = node.right
+            if node.is_root():
+                self.root = new_pointer
+            elif node.is_right_child():  # if node is the right child of its parent
+                node.parent.right = new_pointer
+            else:
+                node.parent.left = new_pointer
+            new_pointer.parent = node.parent
+            pivot = new_pointer
+
+        elif node.has_only_left_child():  # if node has only left child
+            new_pointer = node.left
+            if node.is_root():
+                self.root = new_pointer
+            elif node.is_right_child():  # if node is the right child of its parent
+                node.parent.right = new_pointer
+            else:
+                node.parent.left = new_pointer
+            new_pointer.parent = node.parent
+            pivot = new_pointer
+
+            # if node has two children, we will replace it with its successor and delete its successor which must be a leaf or unary
+        else:
+            new_pointer = self.successor(node)
+            temp_key = node.key
+            temp_val = node.value
+            node.key = new_pointer.key
+            node.value = new_pointer.value
+            new_pointer.key = temp_key
+            new_pointer.value = temp_val
+            self.delete(new_pointer)
+            pivot = node
+        curr_tree = AVLTree(pivot)
+        curr_tree.balance_post_deletion()
+
+    def balance_post_deletion_helper(self, node):
+        if node.parent is not None:
+            ptree = self.parent_tree(node)
+            ptree.balance_post_deletion()
+
+    def balance_post_deletion(self):
+        pivot = self.root
+        if pivot.is_real_node():
+            deletion_rebalance_case = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot)
+            match deletion_rebalance_case:
+                case DeleteRebalanceCase.CASE0:  # if node is balanced
+                    if pivot.parent is not None:
+                        case_parent = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot.parent)
+                        if case_parent == DeleteRebalanceCase.CASE0:
+                            pass
+                        else:
+                            ptree = self.parent_tree(pivot)
+                            ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE1:
+                    pivot.demote_height()
+                    if pivot.parent is not None:
+                        ptree = self.parent_tree(pivot)
+                        ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE2_1:
+                    new_root = pivot.right
+                    new_root.promote_height()
+                    pivot.demote_height()
+                    self.rotate_left(pivot)
+                    if new_root.parent is not None:
+                        ptree = self.parent_tree(new_root)
+                        ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE2_2:
+                    new_root = pivot.left
+                    new_root.promote_height()
+                    pivot.demote_height()
+                    self.rotate_right(pivot)
+                    if new_root.parent is not None:
+                        ptree = self.parent_tree(new_root)
+                        ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE3_1:
+                    pivot.demote_height()
+                    pivot.demote_height()
+                    self.rotate_left(self.root)
+                    if pivot.parent is not None:
+                        ptree = self.parent_tree(pivot)
+                        ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE3_2:
+                    pivot.demote_height()
+                    pivot.demote_height()
+                    self.rotate_right(self.root)
+                    if pivot.parent is not None:
+                        ptree = self.parent_tree(pivot)
+                        ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE4_1:
+                    new_root = pivot.right.left
+                    new_right = pivot.right
+                    pivot.demote_height()
+                    pivot.demote_height()
+                    new_right.demote_height()
+                    new_root.promote_height()
+                    self.rotate_right(new_right)
+                    self.rotate_left(pivot)
+                    if new_root.parent is not None:
+                        ptree = self.parent_tree(new_root)
+                        ptree.balance_post_deletion()
+                case DeleteRebalanceCase.CASE4_2:
+                    new_root = pivot.left.right
+                    new_left = pivot.left
+                    pivot.demote_height()
+                    pivot.demote_height()
+                    new_left.demote_height()
+                    new_root.promote_height()
+                    self.rotate_left(new_left)
+                    self.rotate_right(pivot)
+                    if new_root.parent is not None:
+                        ptree = self.parent_tree(new_root)
+                        ptree.balance_post_deletion()
 
     """joins self with item and another AVLTree
-
-    @type tree2: AVLTree 
-    @param tree2: a dictionary to be joined with self
-    @type key: int 
-    @param key: the key separting self and tree2
-    @type val: string
-    @param val: the value corresponding to key
-    @pre: all keys in self are smaller than key and all keys in tree2 are larger than key,
-    or the opposite way
-    """
+    
+        @type tree2: AVLTree 
+        @param tree2: a dictionary to be joined with self
+        @type key: int 
+        @param key: the key separting self and tree2
+        @type val: string
+        @param val: the value corresponding to key
+        @pre: all keys in self are smaller than key and all keys in tree2 are larger than key,
+        or the opposite way
+        """
 
     def find_joining_point(self, h, is_right):
         node = self.root
@@ -467,7 +654,7 @@ class AVLTree(object):
                 self.join_case2(joining_node, taller_tree, shorter_tree)
 
     """splits the dictionary at a given node
-
+    
     @type node: AVLNode
     @pre: node is in self
     @param node: the node in the dictionary to be used for the split
@@ -481,7 +668,7 @@ class AVLTree(object):
         return None, None
 
     """returns an array representing dictionary 
-
+    
     @rtype: list
     @returns: a sorted list according to key of touples (key, value) representing the data structure
     """
@@ -497,7 +684,7 @@ class AVLTree(object):
         return left_tree.avl_to_array() + [root_tup] + right_tree.avl_to_array()
 
     """returns the node with the maximal key in the dictionary
-
+    
     @rtype: AVLNode
     @returns: the maximal node, None if the dictionary is empty
     """
@@ -515,7 +702,7 @@ class AVLTree(object):
         return node
 
     """returns the number of items in dictionary 
-
+    
     @rtype: int
     @returns: the number of items in dictionary 
     """
@@ -528,10 +715,10 @@ class AVLTree(object):
         return AVLTree(self.root.left).size() + AVLTree(self.root.right).size() + 1
 
     """returns the root of the tree representing the dictionary
-
+    
     @rtype: AVLNode
     @returns: the root, None if the dictionary is empty
     """
 
     def get_root(self):
-        return None
+        return self.root
