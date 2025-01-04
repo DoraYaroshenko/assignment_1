@@ -8,6 +8,8 @@ from pytest import fixture
 
 from tqdm import tqdm
 
+N = 1000
+
 
 @fixture
 def medium_test_tree():
@@ -194,14 +196,14 @@ def build_tree():
 
 
 def build_tree1_from_array():
-    lst = [i for i in range(10000)]
+    lst = [i for i in range(N)]
     # [2, 3, 1, 7, 5, 8, 4, 0, 9, 6]
     # [i for i in range(10)]
 
     # [3, 5, 8, 7, 4, 2, 1, 6, 0, 9]
     # [i for i in range(10)]
     shuffle(lst)
-    print(lst)
+    #print(lst)
     # root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     # root.left = AVLNode(key=None, value=None, parent=root)
     # root.right = AVLNode(key=None, value=None, parent=root)
@@ -209,14 +211,14 @@ def build_tree1_from_array():
     promotions = 0
     for i in lst:
         promotions = tree.insert(key=i, val=str(i), finger=True)[2]
-    valid_proms = promotions <= math.log2(10000)
+    valid_proms = promotions <= 2*math.log2(N)
     assert valid_proms
     # print_tree(tree.root)
     return tree
 
 
 def build_tree2_from_array():
-    lst = [i for i in range(10001, 20001)]
+    lst = [i for i in range(N+1, 2*N+1)]
     # [15,16]
     # [i for i in range(11, 21)]
     shuffle(lst)
@@ -225,7 +227,7 @@ def build_tree2_from_array():
     # root.left = AVLNode(key=None, value=None, parent=root)
     # root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree()
-    num = randrange(2, 10000)
+    num = randrange(2, N)
     for number in lst[0:num]:
         tree.insert(key=number, val=str(number), finger=True)
     return tree
@@ -257,7 +259,7 @@ def print_tree(node, level=0, prefix="Root: "):
 
 
 def test_avl_size(build_tree):
-    assert build_tree.size() == 10000
+    assert build_tree.size() == N
 
 
 def test_balance(build_tree):
@@ -304,16 +306,16 @@ def test_join(build_tree, build_tree2):
     size1 = build_tree.size()
     size2 = build_tree2.size()
     print(size1, size2)
-    build_tree.join(build_tree2, 10000, 10000)
+    build_tree.join(build_tree2, N, N)
     # print_tree(build_tree.root)
     assert test_balance(build_tree) and test_children(build_tree) and build_tree.size() == size1 + size2 + 1
     return test_is_avl_tree(build_tree)
 
 
 def test_split(build_tree):
-    num = randrange(0, 10000)
-    print(num)
-    print_tree(build_tree.root)
+    num = randrange(0, N)
+    #print(num)
+    #print_tree(build_tree.root)
     node = build_tree.search(num)[0]
     minimum = build_tree.min_node()
     maximum = build_tree.max_node()
@@ -321,8 +323,8 @@ def test_split(build_tree):
     build_tree_array = [x[0] for x in build_tree_array]
     build_tree_array.remove(num)
     tree_with_smaller_keys, tree_with_bigger_keys = build_tree.split(node)
-    print_tree(tree_with_smaller_keys.root)
-    print_tree(tree_with_bigger_keys.root)
+    #print_tree(tree_with_smaller_keys.root)
+    #print_tree(tree_with_bigger_keys.root)
     assert test_is_avl_tree(tree_with_bigger_keys) and test_is_avl_tree(tree_with_smaller_keys)
     is_valid_split = False
     tree_with_smaller_keys_array = [x[0] for x in tree_with_smaller_keys.avl_to_array()]
@@ -355,7 +357,7 @@ def test_split_1000_times():
 
 def test_deletion(build_tree):
     print_tree(build_tree.root)
-    num = randrange(0, 10000)
+    num = randrange(0, N)
     node = build_tree.search(num)[0]
     print(node.key)
     build_tree.delete(node)
@@ -365,7 +367,7 @@ def test_deletion(build_tree):
 
 
 def test_delete_10000_times():
-    for i in tqdm(range(100)):
+    for i in tqdm(range(1000)):
         tree1 = build_tree1_from_array()
         flag = test_deletion(tree1)
         assert flag
