@@ -1,9 +1,9 @@
-# id1:
-# name1:
-# username1:
-# id2:
-# name2:
-# username2:
+# id1:330371063
+# name1:דורה ירושנקו
+# username1:yaroshenko
+# id2:215060922
+# name2:אנה ברסקי
+# username2:annabarski
 from typing import Optional
 from enum import Enum
 
