@@ -194,7 +194,7 @@ def build_tree():
 
 
 def build_tree1_from_array():
-    lst = [i for i in range(10)]
+    lst = [i for i in range(10000)]
     # [2, 3, 1, 7, 5, 8, 4, 0, 9, 6]
     # [i for i in range(10)]
 
@@ -209,7 +209,7 @@ def build_tree1_from_array():
     promotions = 0
     for i in lst:
         promotions = tree.insert(key=i, val=str(i), finger=True)[2]
-    valid_proms = promotions <= math.log2(10)
+    valid_proms = promotions <= math.log2(10000)
     assert valid_proms
     # print_tree(tree.root)
     return tree
@@ -311,16 +311,26 @@ def test_join(build_tree, build_tree2):
 
 
 def test_split(build_tree):
-    num = randrange(0, 10)
+    num = randrange(0, 10000)
     print(num)
+    print_tree(build_tree.root)
     node = build_tree.search(num)[0]
     minimum = build_tree.min_node()
     maximum = build_tree.max_node()
+    build_tree_array = build_tree.avl_to_array()
+    build_tree_array = [x[0] for x in build_tree_array]
+    build_tree_array.remove(num)
     tree_with_smaller_keys, tree_with_bigger_keys = build_tree.split(node)
     print_tree(tree_with_smaller_keys.root)
     print_tree(tree_with_bigger_keys.root)
     assert test_is_avl_tree(tree_with_bigger_keys) and test_is_avl_tree(tree_with_smaller_keys)
     is_valid_split = False
+    tree_with_smaller_keys_array = [x[0] for x in tree_with_smaller_keys.avl_to_array()]
+    tree_with_bigger_keys_array = [x[0] for x in tree_with_bigger_keys.avl_to_array()]
+    all_nums_are_in = set(build_tree_array) == set(tree_with_smaller_keys_array
+                                                   + tree_with_bigger_keys_array)
+    assert all_nums_are_in and all(x < num for x in tree_with_smaller_keys_array) and all(
+        x > num for x in tree_with_bigger_keys_array)
     if node is minimum:
         assert tree_with_smaller_keys.size() == 0 and num < tree_with_bigger_keys.min_node().key
         is_valid_split = tree_with_smaller_keys.size() == 0 and num < tree_with_bigger_keys.min_node().key
@@ -331,7 +341,16 @@ def test_split(build_tree):
         assert tree_with_smaller_keys.max_node().key < num < tree_with_bigger_keys.min_node().key
         is_valid_split = tree_with_smaller_keys.max_node().key < num < tree_with_bigger_keys.min_node().key
     return test_is_avl_tree(tree_with_bigger_keys) and test_is_avl_tree(tree_with_smaller_keys) and is_valid_split and \
-        tree_with_smaller_keys.search(num)[0] is None and tree_with_bigger_keys.search(num)[0] is None
+        tree_with_smaller_keys.search(num)[0] is None and tree_with_bigger_keys.search(num)[
+            0] is None and all_nums_are_in and all(x < num for x in tree_with_smaller_keys_array) and all(
+            x > num for x in tree_with_bigger_keys_array)
+
+
+def test_split_1000_times():
+    for i in tqdm(range(100)):
+        tree = build_tree1_from_array()
+        flag = test_split(tree)
+        assert flag
 
 
 def test_deletion(build_tree):

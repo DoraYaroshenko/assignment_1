@@ -412,7 +412,7 @@ class AVLTree(object):
     def insert(self, key, val, finger=False):
         node, path_len_counter = self.find_insertion_place(
             key) if not finger else self.find_finger_insertion_place(key)
-        if node is None:
+        if node is None or (not node.is_real_node() and node.parent is None):
             self.root = self.create_valid_node(key, val)
             return self.root, 0, 0
         new_node = self.create_valid_node(key, val, node.parent)
@@ -672,37 +672,32 @@ class AVLTree(object):
     """
 
     def split(self, node):
-        curr_node = self.root
-        # tree_with_smaller_keys = AVLTree()
-        # tree_with_bigger_keys = AVLTree()
-        while curr_node.is_real_node():
-            if curr_node.key > node.key:
-                curr_node = curr_node.left
-            elif curr_node.key < node.key:
-                curr_node = curr_node.right
-            else:
-                break
+        curr_node = node
         node_right_subtree = AVLTree(node.right)
         node_left_subtree = AVLTree(node.left)
         tree_with_bigger_keys = node_right_subtree
+        tree_with_bigger_keys.root.parent = None
         tree_with_smaller_keys = node_left_subtree
-        # node_right_subtree.join(tree_with_bigger_keys, curr_node.right.key, curr_node.right.value)
-        # node_left_subtree.join(tree_with_smaller_keys, curr_node.left.key, curr_node.left.value)
+        tree_with_smaller_keys.root.parent = None
         while curr_node.parent is not None:
             is_right = curr_node.is_right_child()
             curr_node = curr_node.parent
             if is_right:
                 node_left_subtree = AVLTree(curr_node.left)
+                node_left_subtree.root.parent = None
                 if tree_with_smaller_keys.size() == 0:
+                    node_left_subtree.insert(curr_node.key, curr_node.value)
                     tree_with_smaller_keys = node_left_subtree
                 else:
-                    node_left_subtree.join(tree_with_smaller_keys, curr_node.key, curr_node.value)
+                    tree_with_smaller_keys.join(node_left_subtree, curr_node.key, curr_node.value)
             else:
                 node_right_subtree = AVLTree(curr_node.right)
+                node_right_subtree.root.parent = None
                 if tree_with_bigger_keys.size() == 0:
+                    node_right_subtree.insert(curr_node.key, curr_node.value)
                     tree_with_bigger_keys = node_right_subtree
                 else:
-                    node_right_subtree.join(tree_with_bigger_keys, curr_node.key, curr_node.value)
+                    tree_with_bigger_keys.join(node_right_subtree, curr_node.key, curr_node.value)
         return tree_with_smaller_keys, tree_with_bigger_keys
 
     """returns an array representing dictionary 
