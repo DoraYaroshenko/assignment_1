@@ -8,7 +8,7 @@ from pytest import fixture
 
 from tqdm import tqdm
 
-N = 1000
+N = 10
 
 
 @fixture
@@ -210,7 +210,9 @@ def build_tree1_from_array():
     tree = AVLTree()
     promotions = 0
     for i in lst:
-        promotions = tree.insert(key=i, val=str(i), finger=True)[2]
+        x, path, promotions,  = tree.insert(key=i, val=str(i), finger=True)
+        print_tree(tree.root)
+        print(path)
     valid_proms = promotions <= 2*math.log2(N)
     assert valid_proms
     # print_tree(tree.root)
@@ -229,7 +231,7 @@ def build_tree2_from_array():
     tree = AVLTree()
     num = randrange(2, N)
     for number in lst[0:num]:
-        tree.insert(key=number, val=str(number), finger=True)
+        tree.insert(key=number, val=str(number))
     return tree
 
 

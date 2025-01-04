@@ -373,7 +373,7 @@ class AVLTree(object):
             ltree = AVLTree()
             ltree.root = curr.left
             return ltree.search_logic(key, path + 1)
-        return curr.left, path
+        return curr.left, path+1
 
     """
     searches for a node in the dictionary corresponding to the key, starting at the max
