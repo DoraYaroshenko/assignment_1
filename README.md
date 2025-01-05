@@ -430,7 +430,10 @@ The class implements the folliwing methods:
     @returns: a tuple (left, right), where left is an AVLTree representing the keys in the 
     dictionary smaller than node.key, and right is an AVLTree representing the keys in the 
     dictionary larger than node.key.
-    Complexity O(logn), because it is implemented the same way it was described in class
+    Complexity O(logn), because it is implemented the same way it was described in class. First we traverse the tree until the node is found-log(n)
+    Then we perform O(logn) join functions which is still bound by log(n) since with each insertion the height of the tree gets bigger by at most 2,
+    the time it takes to insert a tree can be bound by the difference between the heights of the trees that were already joined and the tree to be joined-at most 2,
+    hence the series of insertions takes less than 2log(n)=O(logn). The split operation costs O(logn+logn)=O(logn)
 
     def avl_to_array(self):
     returns an array representing dictionary     
