@@ -10,7 +10,7 @@ from enum import Enum
 """A class representing all the possible cases of disbalance created by inserting a node or joining two trees"""
 
 
-class RebalanceCase(Enum):
+class RebalanceCaseAfterJoinOrInsert(Enum):
     CASE_TERMINAL = 0
     CASE_DIFF_0_1_OR_1_0 = 1
     CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2 = 2
@@ -25,29 +25,27 @@ class RebalanceCase(Enum):
     def from_height_diffs(cls, parent_left_diff, parent_right_diff, node_left_diff, node_right_diff):
         if (parent_left_diff == 1 and parent_right_diff == 1) or (parent_left_diff == 2 and parent_right_diff == 1) or (
                 parent_left_diff == 1 and parent_right_diff == 2):
-            return RebalanceCase.CASE_TERMINAL
+            return RebalanceCaseAfterJoinOrInsert.CASE_TERMINAL
         elif (parent_left_diff == 0 and parent_right_diff == 1) or (parent_left_diff == 1 and parent_right_diff == 0):
-            return RebalanceCase.CASE_DIFF_0_1_OR_1_0
+            return RebalanceCaseAfterJoinOrInsert.CASE_DIFF_0_1_OR_1_0
         elif (parent_left_diff == 0 and parent_right_diff == 2) and (
                 node_left_diff == 1 and node_right_diff == 2):
-            return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2
+            return RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2
         elif (parent_left_diff == 2 and parent_right_diff == 0) and (
                 node_left_diff == 2 and node_right_diff == 1):
-            return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1
+            return RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1
         elif (parent_left_diff == 0 and parent_right_diff == 2) and (
                 node_left_diff == 2 and node_right_diff == 1):
-            return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1
+            return RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1
         elif (parent_left_diff == 2 and parent_right_diff == 0) and (
                 node_left_diff == 1 and node_right_diff == 2):
-            return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2
+            return RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2
         elif parent_left_diff == 2 and parent_right_diff == 2:
-            return RebalanceCase.CASE_DIFF_2_2
+            return RebalanceCaseAfterJoinOrInsert.CASE_DIFF_2_2
         elif (parent_left_diff == 2 and parent_right_diff == 0) and (node_left_diff == 1 and node_right_diff == 1):
-            return RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1
+            return RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1
         elif (parent_left_diff == 0 and parent_right_diff == 2) and (node_left_diff == 1 and node_right_diff == 1):
-            return RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1
-        else:
-            raise Exception
+            return RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1
 
 
 """
@@ -55,7 +53,7 @@ A class representing all the possible cases of height differences between two tr
 """
 
 
-class JoiningRebalanceCase(Enum):
+class JoiningCase(Enum):
     CASE0 = 0
     CASE1 = 1
     CASE2 = 2
@@ -63,11 +61,11 @@ class JoiningRebalanceCase(Enum):
     @classmethod
     def from_joining_height_diffs(cls, tr_with_bigger_keys_height, tr_with_smaller_keys_height):
         if tr_with_smaller_keys_height == tr_with_bigger_keys_height:
-            return JoiningRebalanceCase.CASE0
+            return JoiningCase.CASE0
         elif tr_with_bigger_keys_height > tr_with_smaller_keys_height:
-            return JoiningRebalanceCase.CASE1
+            return JoiningCase.CASE1
         else:
-            return JoiningRebalanceCase.CASE2
+            return JoiningCase.CASE2
 
 
 """
@@ -382,9 +380,7 @@ class AVLTree(object):
     @rtype: (AVLNode,int)
     @returns: a tuple (x,e) where x is the node corresponding to key (or None if not found),
     and e is the number of edges on the path between the starting node and ending node+1.
-    time complexity is O(log(n)), since the first and second loops will have at most log(n) iterations of O(1) complexity
-    and then we call on a function of time complexity O(log(n))
-    hence the total running time in the worst case is 3log(n)=O(log(n))
+    time complexity is O(log(n)), since it uses finger_search_logic
     """
     def finger_search(self, key):
         node, path = self.finger_search_logic(key)
@@ -501,41 +497,41 @@ class AVLTree(object):
         parent_right_diff = parent.height - parent.right.height
         node_left_diff = node.height - node.left.height
         node_right_diff = node.height - node.right.height
-        rebalance_case = RebalanceCase.from_height_diffs(
+        rebalance_case = RebalanceCaseAfterJoinOrInsert.from_height_diffs(
             parent_left_diff=parent_left_diff, parent_right_diff=parent_right_diff,
             node_left_diff=node_left_diff, node_right_diff=node_right_diff
         )
 
         match rebalance_case:
-            case RebalanceCase.CASE_TERMINAL:
+            case RebalanceCaseAfterJoinOrInsert.CASE_TERMINAL:
                 pass
-            case RebalanceCase.CASE_DIFF_0_1_OR_1_0:
+            case RebalanceCaseAfterJoinOrInsert.CASE_DIFF_0_1_OR_1_0:
                 promotions += self.rebalance_after_insertion_or_join(parent)
-            case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2:
+            case RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_2:
                 self.rotate_right(parent)
                 parent.demote_height()
-            case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1:
+            case RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_2_0_CHILD_DIFF_2_1:
                 self.rotate_left(parent)
                 parent.demote_height()
-            case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1:
+            case RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_0_2_CHILD_DIFF_2_1:
                 right = node.right
                 self.left_right_double_rotation(parent)
                 node.demote_height()
                 parent.demote_height()
                 right.promote_height()
-            case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2:
+            case RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_2:
                 left = node.left
                 self.right_left_double_rotation(parent)
                 node.demote_height()
                 parent.demote_height()
                 left.promote_height()
-            case RebalanceCase.CASE_DIFF_2_2:
+            case RebalanceCaseAfterJoinOrInsert.CASE_DIFF_2_2:
                 parent.demote_height()
                 promotions += self.rebalance_after_insertion_or_join(parent)
-            case RebalanceCase.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1:
+            case RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_2_0_CHILD_DIFF_1_1:
                 self.rotate_left(parent)
                 promotions += self.rebalance_after_insertion_or_join(node)
-            case RebalanceCase.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1:
+            case RebalanceCaseAfterJoinOrInsert.CASE_PARENT_DIFF_0_2_CHILD_DIFF_1_1:
                 self.rotate_right(parent)
                 promotions += self.rebalance_after_insertion_or_join(node)
         return promotions
@@ -647,8 +643,8 @@ class AVLTree(object):
     @param node: the node we need to delete
     @rtype: AVLNode
     @returns: a node we start to rebalance from
-    Complexity O(1), because we can connect the only child to the parent and delete the node,
-    which takes constant amount of time
+    Complexity O(1), because we can connect the only child to the parent of the node we want to delete,
+    and delete the node, which takes constant amount of time
     """
     def handle_delete_with_only_right_child(self, node):
         new_pointer = node.right
@@ -798,7 +794,7 @@ class AVLTree(object):
         self.balance_post_deletion_helper(pivot)
 
     """
-    a method that handles the rebalancing case symmetric to the case 2 from the lecture
+    a method that handles the rebalancing case symmetric to the case 3 from the lecture
     @type pivot: AVLNode
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
@@ -810,7 +806,7 @@ class AVLTree(object):
         self.balance_post_deletion_helper(pivot)
 
     """
-    a method that handles the rebalancing case symmetric to the case 3 from the lecture
+    a method that handles the rebalancing case 4 from the lecture
     @type pivot: AVLNode
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
@@ -925,7 +921,7 @@ class AVLTree(object):
         self.rebalance_after_insertion_or_join(joining_node)
 
     """
-    a method which handles the case when the tree with smaller keys is shorter
+    a method which handles the case when the tree with smaller keys is taller
     @type joining_node: AVLNode
     @param joining_node: the node given to connect the trees
     @type taller_tree: AVLTree
@@ -954,7 +950,8 @@ class AVLTree(object):
     @param val: the value corresponding to key
     @pre: all keys in self are smaller than key and all keys in tree2 are larger than key,
     or the opposite way
-    Complexity O(logn), because it is implemented the way we saw in class
+    Complexity O(logn), because it is implemented the way we saw in class. We connect two trees, and then we perform the
+    amount of rebalancing steps that is at most the height pof the tree, which is O(logn)
     """
     def join(self, tree2, key, val):
         tree2_has_bigger_keys = tree2.root.key > self.root.key
@@ -962,16 +959,16 @@ class AVLTree(object):
         tree_with_smaller_keys = self if tree2_has_bigger_keys else tree2
         taller_tree = self if self.root.height > tree2.root.height else tree2
         shorter_tree = tree2 if self.root.height > tree2.root.height else self
-        joining_case = JoiningRebalanceCase.from_joining_height_diffs(tree_with_bigger_keys.root.height,
-                                                                      tree_with_smaller_keys.root.height)
+        joining_case = JoiningCase.from_joining_height_diffs(tree_with_bigger_keys.root.height,
+                                                             tree_with_smaller_keys.root.height)
         joining_node = self.create_valid_node(key=key, val=val)
         joining_node.height = shorter_tree.root.height
         match joining_case:
-            case JoiningRebalanceCase.CASE0:
+            case JoiningCase.CASE0:
                 self.join_case0(joining_node, tree_with_bigger_keys, tree_with_smaller_keys)
-            case JoiningRebalanceCase.CASE1:
+            case JoiningCase.CASE1:
                 self.join_case1(joining_node, taller_tree, shorter_tree)
-            case JoiningRebalanceCase.CASE2:
+            case JoiningCase.CASE2:
                 self.join_case2(joining_node, taller_tree, shorter_tree)
 
     """splits the dictionary at a given node

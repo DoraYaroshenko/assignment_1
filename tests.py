@@ -211,8 +211,8 @@ def build_tree1_from_array():
     promotions = 0
     for i in lst:
         x, path, promotions,  = tree.insert(key=i, val=str(i), finger=True)
-        print_tree(tree.root)
-        print(path)
+        # print_tree(tree.root)
+        # print(promotions)
     valid_proms = promotions <= 2*math.log2(N)
     assert valid_proms
     # print_tree(tree.root)
