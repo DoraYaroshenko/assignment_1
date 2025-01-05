@@ -121,6 +121,7 @@ class AVLNode(object):
     @type parent: AVLNode
     @param parent: the parent of your node
     """
+
     def __init__(self, key, value, height=-1, parent=None):
         self.key = key
         self.value = value
@@ -135,6 +136,7 @@ class AVLNode(object):
     @returns: False if self is a virtual node, True otherwise.
     Complexity O(1)
     """
+
     def is_real_node(self):
         if self is None or self.key is None:
             return False
@@ -147,6 +149,7 @@ class AVLNode(object):
     node and its right child
     Complexity O(1)
     """
+
     def balance_factor(self):
         if not self.is_real_node():
             return 0
@@ -158,6 +161,7 @@ class AVLNode(object):
     @returns: True if node has only right child, False otherwise
     Complexity O(1)
     """
+
     def has_only_right_child(self):
         if not self.left.is_real_node() and self.right.is_real_node():
             return True
@@ -169,6 +173,7 @@ class AVLNode(object):
     @returns: True if node has only left child, False otherwise
     Complexity O(1)
     """
+
     def has_only_left_child(self):
         if not self.right.is_real_node() and self.left.is_real_node():
             return True
@@ -182,6 +187,7 @@ class AVLNode(object):
     @returns: the number of promotions made
     Complexity O(1)
     """
+
     def promote_height(self, delta=1):
         self.height += delta
         return delta
@@ -192,6 +198,7 @@ class AVLNode(object):
     @param delta: the value removed from the height of the node
     Complexity O(1)
     """
+
     def demote_height(self, delta=1):
         self.height -= delta
 
@@ -201,6 +208,7 @@ class AVLNode(object):
     @returns: True if the node is a leaf, False otherwise
     Complexity O(1)
     """
+
     def is_leaf(self):
         return (self.left is None or not self.left.is_real_node()) and (
                 self.right is None or not self.right.is_real_node())
@@ -211,6 +219,7 @@ class AVLNode(object):
     @returns: True if the node is a root, False otherwise
     Complexity O(1)
     """
+
     def is_root(self):
         return self.parent is None
 
@@ -220,6 +229,7 @@ class AVLNode(object):
     @returns: True if the node is a right child, False otherwise
     Complexity O(1)
     """
+
     def is_right_child(self):
         if self.parent is not None and self.parent.right is not None and self.parent.right is self:
             return True
@@ -231,6 +241,7 @@ class AVLNode(object):
     @returns: True if the node is a left child, False otherwise
     Complexity O(1)
     """
+
     def is_left_child(self):
         if self.parent is not None and self.parent.left is not None and self.parent.left is self:
             return True
@@ -260,6 +271,7 @@ class AVLTree(object):
     @returns: the successor
     Complexity O(logn), because the maximal amount of steps is the height of the tree
     """
+
     def successor(self, node):
         if node.right.is_real_node():
             left_subtree = AVLTree(node.right)
@@ -279,6 +291,7 @@ class AVLTree(object):
     @returns: a tree whose root is the parent of a given node
     Complexity O(1)
     """
+
     @staticmethod
     def parent_tree(node):
         ptree = AVLTree()
@@ -291,6 +304,7 @@ class AVLTree(object):
     @returns: the left subtree of the current tree
     time complexity O(1)
     """
+
     def left_subtree(self):
         ltree = AVLTree()
         ltree.root = self.root.left
@@ -302,6 +316,7 @@ class AVLTree(object):
     @returns: the right subtree of the current tree
     time complexity O(1)
     """
+
     def right_subtree(self):
         rtree = AVLTree()
         rtree.root = self.root.right
@@ -319,9 +334,10 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     Complexity O(logn), because the maximal amount of steps during walking on the tree is its height
     """
+
     def search_logic(self, k, path):
         if self.root is None or not self.root.is_real_node() or self.root.key == k:
-            return self.root, path
+            return self.root, path+1
         if self.root.key > k:
             return self.left_subtree().search_logic(k, path + 1)
         return self.right_subtree().search_logic(k, path + 1)
@@ -336,6 +352,7 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     Complexity O(logn), because search uses search_logic
     """
+
     def search(self, key):
         node, path = self.search_logic(key, 0)
         if node is None or not node.is_real_node():
@@ -355,13 +372,14 @@ class AVLTree(object):
     and then we call on a function of time complexity O(log(n))
     hence the total running time in the worst case is 3log(n)=O(log(n))
     """
+
     def finger_search_logic(self, key):
         if self.root is None:
-            return self.root, 0
+            return self.root, 1
         curr = self.max_node()
         if key > curr.key:
-            return curr.right, 1
-        path = 0
+            return curr.right, 2
+        path = 1
         while curr.key > key and curr.parent is not None and curr.parent.key >= key:
             path = path + 1
             curr = curr.parent
@@ -370,8 +388,8 @@ class AVLTree(object):
         if curr.left.is_real_node():
             ltree = AVLTree()
             ltree.root = curr.left
-            return ltree.search_logic(key, path + 1)
-        return curr.left, path+1
+            return ltree.search_logic(key, path)
+        return curr.left, path + 1
 
     """
     searches for a node in the dictionary corresponding to the key, starting at the max
@@ -382,6 +400,7 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     time complexity is O(log(n)), since it uses finger_search_logic
     """
+
     def finger_search(self, key):
         node, path = self.finger_search_logic(key)
         if node is None or not node.is_real_node():
@@ -400,6 +419,7 @@ class AVLTree(object):
     @returns: the new node
     Complexity O(1)
     """
+
     @staticmethod
     def create_valid_node(key, val, parent=None):
         new_node = AVLNode(key, val, 0)
@@ -414,6 +434,7 @@ class AVLTree(object):
     @param node: the node we want to start the rotation from
     Complexity O(1), because the amount of time is constant
     """
+
     def rotate_right(self, node: AVLNode):
         is_right = node.is_right_child()
         new_root = node.left
@@ -438,6 +459,7 @@ class AVLTree(object):
     @param node: the node we want to start the rotation from
     Complexity O(1), because the amount of time is constant
     """
+
     def rotate_left(self, node: AVLNode):
         is_left = node.is_left_child()
         new_root = node.right
@@ -463,6 +485,7 @@ class AVLTree(object):
     @param node: the node we want to start the rotation from
     Complexity O(1), because the amount of time is constant
     """
+
     def left_right_double_rotation(self, node):
         AVLTree.rotate_left(self, node.left)
         AVLTree.rotate_right(self, node)
@@ -473,6 +496,7 @@ class AVLTree(object):
     @param node: the node we want to start the rotation from
     Complexity O(1), because the amount of time is constant
     """
+
     def right_left_double_rotation(self, node):
         AVLTree.rotate_right(self, node.right)
         AVLTree.rotate_left(self, node)
@@ -486,6 +510,7 @@ class AVLTree(object):
     Complexity O(logn), because we walk from the node to the root by the maximum amount of steps equal
     to the height of the tree, and we perform maximum 2 rotations
     """
+
     def rebalance_after_insertion_or_join(self, node):
         promotions = 0
         parent = node.parent
@@ -545,8 +570,10 @@ class AVLTree(object):
     and e is the number of edges on the path between the starting node and ending node+1.
     Complexity O(logn), because it uses search_logic method
     """
+
     def find_insertion_place(self, key):
-        return self.search_logic(key, 0)
+        node, path = self.search_logic(key, 0)
+        return node, path-1
 
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
@@ -565,6 +592,7 @@ class AVLTree(object):
     Complexity O(logn), because finding the place to insert takes O(logn) at most, inserting time is constant,
     and rebalancing complexity is O(logn)
     """
+
     def insert(self, key, val, finger=False):
         node, path_len_counter = self.find_insertion_place(
             key) if not finger else self.find_finger_insertion_place(key)
@@ -597,8 +625,10 @@ class AVLTree(object):
     ending node+1.
     Complexity O(logn), because it uses finger_search_logic method
     """
+
     def find_finger_insertion_place(self, key):
-        return self.finger_search_logic(key)
+        node, path = self.finger_search_logic(key)
+        return node, path-1
 
     """inserts a new node into the dictionary with corresponding key and value, starting at the max
 
@@ -614,6 +644,7 @@ class AVLTree(object):
     Complexity O(logn), because finding the place to insert takes O(logn) at most, inserting time is constant,
     and rebalancing complexity is O(logn)
     """
+
     def finger_insert(self, key, val):
         return self.insert(key, val, True)
 
@@ -625,6 +656,7 @@ class AVLTree(object):
     @returns: a node we start to rebalance from
     Complexity O(1), because deleting a leaf takes constant amount of time
     """
+
     def handle_delete_leaf(self, node):
         new_pointer = node.right
         if node.is_root():
@@ -646,6 +678,7 @@ class AVLTree(object):
     Complexity O(1), because we can connect the only child to the parent of the node we want to delete,
     and delete the node, which takes constant amount of time
     """
+
     def handle_delete_with_only_right_child(self, node):
         new_pointer = node.right
         if node.is_root():
@@ -666,6 +699,7 @@ class AVLTree(object):
     Complexity O(1), because we can connect the only child to the parent and delete the node,
     which takes constant amount of time
     """
+
     def handle_delete_with_only_left_child(self, node):
         new_pointer = node.left
         if node.is_root():
@@ -687,6 +721,7 @@ class AVLTree(object):
     @returns: the node we need to start rebalancing from
     Complexity O(logn), because it demands rebalancing
     """
+
     def handle_normal_delete(self, node):
         new_pointer = self.successor(node)
         temp_key = node.key
@@ -704,6 +739,7 @@ class AVLTree(object):
     @pre: node is a real pointer to a node in self
     Complexity O(logn), because it is implemented the way it was described in class
     """
+
     def delete(self, node):
         if not node.is_real_node():
             return
@@ -726,6 +762,7 @@ class AVLTree(object):
     @param node: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion method
     """
+
     def balance_post_deletion_helper(self, node):
         if node.parent is not None:
             ptree = self.parent_tree(node)
@@ -737,6 +774,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case0(self, pivot):
         if pivot.parent is not None:
             case_parent = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot.parent)
@@ -751,6 +789,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case1(self, pivot):
         pivot.demote_height()
         self.balance_post_deletion_helper(pivot)
@@ -761,6 +800,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case2_1(self, pivot):
         new_root = pivot.right
         new_root.promote_height()
@@ -774,6 +814,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case2_2(self, pivot):
         new_root = pivot.left
         new_root.promote_height()
@@ -787,6 +828,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case3_1(self, pivot):
         pivot.demote_height()
         pivot.demote_height()
@@ -799,6 +841,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case3_2(self, pivot):
         pivot.demote_height()
         pivot.demote_height()
@@ -811,6 +854,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case4_1(self, pivot):
         new_root = pivot.right.left
         new_right = pivot.right
@@ -827,6 +871,7 @@ class AVLTree(object):
     @param pivot: the node we start rebalancing from
     Complexity O(logn), because it calls balance_post_deletion_helper method
     """
+
     def balance_post_deletion_case4_2(self, pivot):
         new_root = pivot.left.right
         new_left = pivot.left
@@ -841,6 +886,7 @@ class AVLTree(object):
     a method that rebalances the tree after deleting a node
     Complexity O(logn), because it is implemented the way it was described in class
     """
+
     def balance_post_deletion(self):
         pivot = self.root
         if pivot.is_real_node():
@@ -872,6 +918,7 @@ class AVLTree(object):
     @param is right: True if we need to look for the node in the right edge of the tree, False otherwise
     Complexity O(log(n)), because we walk on the tree from the root to the node with height h at most
     """
+
     def find_joining_point(self, h, is_right):
         node = self.root
         while node.height > h:
@@ -891,6 +938,7 @@ class AVLTree(object):
     @param tree_with_smaller_keys: the tree with smaller keys
     Complexity O(1), because joining to trees with the same height takes constant amount of time
     """
+
     def join_case0(self, joining_node, tree_with_bigger_keys, tree_with_smaller_keys):
         joining_node.right = tree_with_bigger_keys.root
         tree_with_bigger_keys.root.parent = joining_node
@@ -909,6 +957,7 @@ class AVLTree(object):
     @param shorter_tree: the tree with smaller height
     Complexity O(logn), because this case demands rebalancing
     """
+
     def join_case1(self, joining_node, taller_tree, shorter_tree):
         joining_point = taller_tree.find_joining_point(shorter_tree.root.height, False)
         joining_node.parent = joining_point.parent
@@ -930,6 +979,7 @@ class AVLTree(object):
     @param shorter_tree: the tree with smaller height
     Complexity O(logn), because this case demands rebalancing
     """
+
     def join_case2(self, joining_node, taller_tree, shorter_tree):
         joining_point = taller_tree.find_joining_point(shorter_tree.root.height, True)
         joining_node.parent = joining_point.parent
@@ -953,6 +1003,7 @@ class AVLTree(object):
     Complexity O(logn), because it is implemented the way we saw in class. We connect two trees, and then we perform the
     amount of rebalancing steps that is at most the height pof the tree, which is O(logn)
     """
+
     def join(self, tree2, key, val):
         tree2_has_bigger_keys = tree2.root.key > self.root.key
         tree_with_bigger_keys = tree2 if tree2_has_bigger_keys else self
@@ -979,8 +1030,14 @@ class AVLTree(object):
     @returns: a tuple (left, right), where left is an AVLTree representing the keys in the 
     dictionary smaller than node.key, and right is an AVLTree representing the keys in the 
     dictionary larger than node.key.
-    Complexity O(logn), because it is implemented the same way it was described in class
+    Complexity O(logn), because it is implemented the same way it was described in class.
+    First we traverse the tree until the node is found-log(n)
+    Then we perform O(logn) join functions which is still bound by log(n) since with each insertion the height of the
+    tree gets bigger by at most 2, the time it takes to insert a tree can be bound by the difference between the heights
+    of the trees that were already joined and the tree to be joined-at most 2, hence the series of insertions takes less
+    than 2log(n)=O(logn). The split operation costs O(logn+logn)=O(logn)
     """
+
     def split(self, node):
         curr_node = node
         node_right_subtree = AVLTree(node.right)
@@ -1015,6 +1072,7 @@ class AVLTree(object):
     @returns: a sorted list according to key of tuples (key, value) representing the data structure
     Complexity O(n), because we need to get to every node to fill the array
     """
+
     def avl_to_array(self):
         if not self.root.is_real_node():
             return []
@@ -1030,6 +1088,7 @@ class AVLTree(object):
     @returns: the maximal node, None if the dictionary is empty
     Complexity O(logn), because the maximal amount of steps is the height of the tree
     """
+
     def max_node(self):
         node = self.root
         while node.right.is_real_node():
@@ -1041,6 +1100,7 @@ class AVLTree(object):
     @returns: the maximal node, None if the dictionary is empty
     Complexity O(logn), because the maximal amount of steps is the height of the tree
     """
+
     def min_node(self):
         node = self.root
         while node.left.is_real_node():
@@ -1052,6 +1112,7 @@ class AVLTree(object):
     @returns: the number of items in dictionary
     Complexity O(n), because we reach each node of the tree one time 
     """
+
     def size(self):
         if not self.root.is_real_node():
             return 0
@@ -1064,5 +1125,6 @@ class AVLTree(object):
     @returns: the root, None if the dictionary is empty
     Complexity O(1)
     """
+
     def get_root(self):
         return self.root

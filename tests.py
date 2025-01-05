@@ -9,6 +9,143 @@ from pytest import fixture
 from tqdm import tqdm
 
 N = 10
+I = 10
+
+
+# def test():
+#     for i in range(10):
+#         I=i+1
+#         test_part_2()
+def test_part_2():
+    sum_of_hipochim_random = 0
+    # i = 1
+    for j in range(20):
+        sum_of_hipochim_random += test_num_of_hipochim(I)
+    print(sum_of_hipochim_random / 20)
+    sum_of_hipochim_chance = 0
+    for j in range(20):
+        sum_of_hipochim_chance += test_num_of_hipochim(I)
+    print(sum_of_hipochim_chance / 20)
+
+
+def test_num_of_hipochim_backwards(i=10):
+    counter = 0
+    arr = create_sorted_backwards_array(i)
+    print(len(arr))
+    for j in range(len(arr)):
+        curr_num = arr[j]
+        for k in range(j, len(arr)):
+            if arr[k] < curr_num:
+                counter += 1
+    print(counter)
+    return counter
+
+
+def test_third_part_test():
+    # i = 1  # change with every test until it's 10
+    average_promotions_random = 0
+    average_promotions_chance = 0
+    num_of_steps_sorted = 0
+    num_of_steps_sorted_backwards = 0
+    """counting promotions on sorted array """
+    arr_sorted = create_sorted_array(I)
+    tree_sorted = AVLTree()
+    for j in range(len(arr_sorted)):
+        """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO num_of_promotions_sorted"""
+        tree_sorted.finger_insert(arr_sorted[j], arr_sorted[j])
+        num_of_steps_sorted += tree_sorted.finger_search(arr_sorted[j])[1]
+    print("cost for sorted array: " + str(num_of_steps_sorted))
+
+    """counting promotions on sorted backwards array """
+    arr_sorted_backwards = create_sorted_backwards_array(I)
+    tree_backwards = AVLTree()
+    for j in range(len(arr_sorted)):
+        """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO num_of_promotions_sorted_backwards"""
+        tree_backwards.finger_insert(arr_sorted_backwards[j], arr_sorted_backwards[j])
+        num_of_steps_sorted_backwards += tree_backwards.finger_search(arr_sorted_backwards[j])[1]
+    print("cost for sorted backwards array: " + str(num_of_steps_sorted_backwards))
+
+    """counting promotions on randomly shuffled array """
+
+    sum_of_steps_random = 0
+    for j in range(20):
+        arr_random = create_randomized_array(I)
+        curr_num_of_promotions = 0
+        tree_random = AVLTree()
+        for k in range(len(arr_random)):
+            """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO curr_num_of_promotions """
+            tree_random.finger_insert(arr_random[k], arr_random[k])
+            curr_num_of_promotions += tree_random.finger_search(arr_random[k])[1]
+        sum_of_steps_random += curr_num_of_promotions
+    average_promotions_random = sum_of_steps_random / 20
+    print("cost for random array " + str(average_promotions_random))
+
+    """counting promotions on array in which numbers have a 50% chance of being swapped with their neighbor"""
+
+    sum_of_promotions_random_chance = 0
+    for j in range(20):
+        arr_random_chance = create_array_sorted_with_chance(I)
+        curr_num_of_steps = 0
+        tree_chance = AVLTree()
+        for k in range(len(arr_random_chance)):
+            """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO curr_num_of_promotions """
+            tree_chance.finger_insert(arr_random_chance[k], arr_random_chance[k])
+            curr_num_of_steps += tree_chance.finger_search(arr_random_chance[k])[1]
+        sum_of_promotions_random_chance += curr_num_of_steps
+    average_promotions_chance = sum_of_promotions_random_chance / 20
+    print("cost for semi randomized array " + str(average_promotions_chance))
+
+
+def test_first_part_test():
+    # i = 1  # change with every test until it's 10
+    average_promotions_random = 0
+    average_promotions_chance = 0
+    num_of_promotions_sorted = 0
+    num_of_promotions_sorted_backwards = 0
+    """counting promotions on sorted array """
+    arr_sorted = create_sorted_array(I)
+    tree_sorted = AVLTree()
+    for j in range(len(arr_sorted)):
+        """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO num_of_promotions_sorted"""
+        num_of_promotions_sorted += tree_sorted.finger_insert(arr_sorted[j], arr_sorted[j])[2]
+    print("cost for sorted array: " + str(num_of_promotions_sorted))
+
+    """counting promotions on sorted backwards array """
+    arr_sorted_backwards = create_sorted_backwards_array(I)
+    tree_backwards = AVLTree()
+    for j in range(len(arr_sorted)):
+        """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO num_of_promotions_sorted_backwards"""
+        num_of_promotions_sorted_backwards += \
+        tree_backwards.finger_insert(arr_sorted_backwards[j], arr_sorted_backwards[j])[2]
+    print("cost for sorted backwards array: " + str(num_of_promotions_sorted_backwards))
+
+    """counting promotions on randomly shuffled array """
+
+    sum_of_promotions_random = 0
+    for j in range(20):
+        arr_random = create_randomized_array(I)
+        curr_num_of_promotions = 0
+        tree_random = AVLTree()
+        for k in range(len(arr_random)):
+            """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO curr_num_of_promotions """
+            curr_num_of_promotions += tree_random.finger_insert(arr_random[k], arr_random[k])[2]
+        sum_of_promotions_random += curr_num_of_promotions
+    average_promotions_random = sum_of_promotions_random / 20
+    print("cost for random array " + str(average_promotions_random))
+
+    """counting promotions on array in which numbers have a 50% chance of being swapped with their neighbor"""
+
+    sum_of_promotions_random_chance = 0
+    for j in range(20):
+        arr_random_chance = create_array_sorted_with_chance(I)
+        curr_num_of_promotions = 0
+        tree_chance = AVLTree()
+        for k in range(len(arr_random_chance)):
+            """INSERT EVERY NUMBER AND EACH TIME ADD THE NUMBER OF PROMOTIONS TO curr_num_of_promotions """
+            curr_num_of_promotions += tree_chance.finger_insert(arr_random_chance[k], arr_random_chance[k])[2]
+        sum_of_promotions_random_chance += curr_num_of_promotions
+    average_promotions_chance = sum_of_promotions_random_chance / 20
+    print("cost for semi randomized array " + str(average_promotions_chance))
 
 
 @fixture
@@ -196,31 +333,32 @@ def build_tree():
 
 
 def build_tree1_from_array():
-    lst = [i for i in range(N)]
+    lst = [3,1,2]
+        # [i for i in range(N)]
     # [2, 3, 1, 7, 5, 8, 4, 0, 9, 6]
     # [i for i in range(10)]
 
     # [3, 5, 8, 7, 4, 2, 1, 6, 0, 9]
     # [i for i in range(10)]
-    shuffle(lst)
-    #print(lst)
+    # shuffle(lst)
+    # print(lst)
     # root = AVLNode(key=lst[0], value=str(lst[0]), height=0)
     # root.left = AVLNode(key=None, value=None, parent=root)
     # root.right = AVLNode(key=None, value=None, parent=root)
     tree = AVLTree()
     promotions = 0
     for i in lst:
-        x, path, promotions,  = tree.insert(key=i, val=str(i), finger=True)
-        # print_tree(tree.root)
-        # print(promotions)
-    valid_proms = promotions <= 2*math.log2(N)
+        x, path, promotions, = tree.insert(key=i, val=str(i), finger=True)
+        print_tree(tree.root)
+        print(promotions)
+    valid_proms = promotions <= 2 * math.log2(N)
     assert valid_proms
     # print_tree(tree.root)
     return tree
 
 
 def build_tree2_from_array():
-    lst = [i for i in range(N+1, 2*N+1)]
+    lst = [i for i in range(N + 1, 2 * N + 1)]
     # [15,16]
     # [i for i in range(11, 21)]
     shuffle(lst)
@@ -261,7 +399,7 @@ def print_tree(node, level=0, prefix="Root: "):
 
 
 def test_avl_size(build_tree):
-    assert build_tree.size() == N
+    assert build_tree.size() == 3
 
 
 def test_balance(build_tree):
@@ -316,8 +454,8 @@ def test_join(build_tree, build_tree2):
 
 def test_split(build_tree):
     num = randrange(0, N)
-    #print(num)
-    #print_tree(build_tree.root)
+    # print(num)
+    # print_tree(build_tree.root)
     node = build_tree.search(num)[0]
     minimum = build_tree.min_node()
     maximum = build_tree.max_node()
@@ -325,8 +463,8 @@ def test_split(build_tree):
     build_tree_array = [x[0] for x in build_tree_array]
     build_tree_array.remove(num)
     tree_with_smaller_keys, tree_with_bigger_keys = build_tree.split(node)
-    #print_tree(tree_with_smaller_keys.root)
-    #print_tree(tree_with_bigger_keys.root)
+    # print_tree(tree_with_smaller_keys.root)
+    # print_tree(tree_with_bigger_keys.root)
     assert test_is_avl_tree(tree_with_bigger_keys) and test_is_avl_tree(tree_with_smaller_keys)
     is_valid_split = False
     tree_with_smaller_keys_array = [x[0] for x in tree_with_smaller_keys.avl_to_array()]
@@ -431,3 +569,104 @@ def test_avl_to_array(build_tree):
     # [0,1,2,3,4,5]
 
     assert build_tree.avl_to_array() == [(i, str(i)) for i in range(build_tree.size())]
+
+
+def create_sorted_array(i: int):
+    arr = [i + 1 for i in range(111 * 2 ** i)]
+    # print(arr)
+    return arr
+
+
+def create_sorted_backwards_array(i: int):
+    arr = []
+    for j in range(111 * 2 ** i):
+        arr.append(111 * 2 ** i - j)
+    return arr
+
+
+def create_randomized_array(i: int):
+    arr = create_sorted_array(i)
+    shuffle(arr)
+    return arr
+
+
+def create_array_sorted_with_chance(i: int):
+    arr = create_sorted_array(i)
+    for j in range(len(arr) - 1):
+        num = randrange(100)
+        if (num < 50):
+            pass
+        else:
+            temp = arr[j]
+            arr[j] = arr[j + 1]
+            arr[j + 1] = temp
+    return arr
+
+
+def test_create_sorted_backwards_array():
+    arr = create_sorted_backwards_array(1)
+    return arr
+    # print(len(arr))
+    # print(arr)
+
+
+def test_create_sorted_array():
+    # i = 1
+    arr = create_sorted_array(I)
+    return arr
+    # print(len(arr))
+    # print(arr)
+
+
+def test_create_randomized_array():
+    # i = 5
+    arr = create_randomized_array(I)
+    return arr
+    # print(len(arr))
+    # print(arr)
+
+
+def test_create_array_sorted_with_chance():
+    # i = 1
+    arr = create_array_sorted_with_chance(I)
+    return arr
+    # print(len(arr))
+    # print(arr)
+
+
+"""
+the theoretical upper bound on cost of balancing including rotations in O(log(n)), rotations run on O(1)
+time complexity, so if a rotation is needed at any stage of insertion, the work at that stage will remain bound by O(1)
+and this is why rotations do not affect the upper bound of the cost of rebalancing
+"""
+
+"""PART 2"""
+"""
+אם נתייחס למערך כתמורה על המספרים הטבעיים הקטנים או שווים ל111*2**i, אז מספר ההיפוכים הוא כמספר החילופים בתמורה
+מספר החילופים במערך ממויין הוא תמיד יהיה 0, שהרי כל מספר נמצא במקומו 
+מספר החילופים במערך ממויין הפוך יהיה תמיד n/2 מעוגל למטה
+כשמדובר במערך אקראי הדברים מסתבכים, אפשר לספרו את כמות ההיפוכים ע"י חילוק התמורה לחילופים ומספר החילופים הוא גם מספר ההיפוכים
+
+"""
+
+
+def test_num_of_hipochim(i: int):
+    arr_randomized = create_randomized_array(i)
+    counter = 0
+    for j in range(111 * (2 ** I)):
+        curr_num = arr_randomized[j]
+        for k in range(j, len(arr_randomized)):
+            if arr_randomized[k] < curr_num:
+                counter += 1
+    return counter
+
+
+def test_num_of_hipochim_chance(i: int):
+    arr_chance = create_array_sorted_with_chance(i)
+    counter = 0
+    for j in range(111 * (2 ** I)):
+        curr_num = arr_chance[j]
+        for k in range(j, len(arr_chance)):
+            if arr_chance[k] < curr_num:
+                counter += 1
+    return counter
