@@ -319,7 +319,7 @@ class AVLTreeTester2022(unittest.TestCase):
         self.add_points(SCORE_PER_TEST)
 
     # def test_search_after_delete_10(self):
-    #     N = 10
+    #     N = 100
     #     T = self.create_tree([i for i in range(N)], random_order=True)
     #     for i in range(N):
     #         self.assertNotEqual(T.search(i)[0], None, "FAIL - search should return None iff str({}) is not in the tree".format(i))

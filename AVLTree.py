@@ -284,21 +284,6 @@ class AVLTree(object):
         return next
 
     """
-    the method creates a tree whose root is the parent of a given node
-    @type node: AVLNode
-    @param node: a node whose parent will be a root of the created tree
-    @rtype: AVLTree
-    @returns: a tree whose root is the parent of a given node
-    Complexity O(1)
-    """
-
-    # @staticmethod
-    # def parent_tree(node):
-    #     ptree = AVLTree()
-    #     ptree.root = node.parent
-    #     return ptree
-
-    """
     method for creation of the left subtree of the current tree
     @rtype: AVLTree
     @returns: the left subtree of the current tree
