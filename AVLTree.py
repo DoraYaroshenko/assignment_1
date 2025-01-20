@@ -284,21 +284,6 @@ class AVLTree(object):
         return next
 
     """
-    the method creates a tree whose root is the parent of a given node
-    @type node: AVLNode
-    @param node: a node whose parent will be a root of the created tree
-    @rtype: AVLTree
-    @returns: a tree whose root is the parent of a given node
-    Complexity O(1)
-    """
-
-    @staticmethod
-    def parent_tree(node):
-        ptree = AVLTree()
-        ptree.root = node.parent
-        return ptree
-
-    """
     method for creation of the left subtree of the current tree
     @rtype: AVLTree
     @returns: the left subtree of the current tree
@@ -661,6 +646,7 @@ class AVLTree(object):
         new_pointer = node.right
         if node.is_root():
             self.root = None
+            return None
         elif node.is_right_child():  # if node is the right child of its parent
             node.parent.right = new_pointer
         else:
@@ -741,7 +727,7 @@ class AVLTree(object):
     """
 
     def delete(self, node):
-        if not node.is_real_node():
+        if node is None or not node.is_real_node():
             return
 
         if node.is_leaf():
@@ -752,9 +738,7 @@ class AVLTree(object):
             pivot = self.handle_delete_with_only_left_child(node)
         else:
             pivot = self.handle_normal_delete(node)
-
-        curr_tree = AVLTree(pivot)
-        curr_tree.balance_post_deletion()
+        self.balance_post_deletion(pivot)
 
     """
     a method created to help balance_post_deletion, that handles the rebalancing a tree after deletion in case we do not delete the root
@@ -765,8 +749,7 @@ class AVLTree(object):
 
     def balance_post_deletion_helper(self, node):
         if node.parent is not None:
-            ptree = self.parent_tree(node)
-            ptree.balance_post_deletion()
+            self.balance_post_deletion(node.parent)
 
     """
     a method that handles all the rebalancing cases not described in the lecture
@@ -887,9 +870,9 @@ class AVLTree(object):
     Complexity O(logn), because it is implemented the way it was described in class
     """
 
-    def balance_post_deletion(self):
-        pivot = self.root
-        if pivot.is_real_node():
+    def balance_post_deletion(self, node):
+        pivot = node
+        if pivot is not None and pivot.is_real_node():
             deletion_rebalance_case = DeleteRebalanceCase.determine_balance_after_deletion_case(pivot)
             match deletion_rebalance_case:
                 case DeleteRebalanceCase.CASE0:  # if node is balanced
@@ -1114,7 +1097,7 @@ class AVLTree(object):
     """
 
     def size(self):
-        if not self.root.is_real_node():
+        if self.root is None or not self.root.is_real_node():
             return 0
         if self.root.is_leaf():
             return 1
